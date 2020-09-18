@@ -100,6 +100,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   printf("hello, Lele\r\n");
+  led_open(0);
+  led_close(1);
   led_close(2);
   if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_100MS * 3)) || (TASK_STARTED != startTask(task_led, 1)))
   {
@@ -113,8 +115,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    FEED_DOG;
+
     /* USER CODE BEGIN 3 */
+      FEED_DOG;
   }
   /* USER CODE END 3 */
 }
@@ -241,13 +244,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  /*Configure GPIO pin : PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -255,7 +258,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PB6 PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

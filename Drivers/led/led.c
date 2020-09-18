@@ -14,7 +14,7 @@
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_8, GPIO_PIN_SET);//LED3
 */
 #define LED_MIN 0
-#define LED_MAX 3
+#define LED_MAX 5
 
 GPIO_TypeDef * LED_GROUP[] = {GPIOB, GPIOB, GPIOA};
 uint16_t LED_PIN[] = {GPIO_PIN_7, GPIO_PIN_6, GPIO_PIN_13};
