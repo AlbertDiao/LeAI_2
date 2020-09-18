@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include "task.h"
 #include "led.h"
+#include "bc20.h"   
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,6 +48,8 @@ IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_rx;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 uint8_t task_led = Task_00;
@@ -56,11 +59,13 @@ uint8_t task_led = Task_00;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_IWDG_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void led_blink(void);
+bool sys_init(void);
 
 /* USER CODE END PFP */
 
@@ -97,6 +102,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_IWDG_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
@@ -106,6 +112,14 @@ int main(void)
   led_open(0);
   led_close(1);
   led_close(2);
+  
+  if (!sys_init())
+  {
+    printf("系统初始化失败！");
+    while (1)
+      ;
+  }
+  
   if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S)) || (TASK_STARTED != startTask(task_led, 1)))
   {
     printf("CREATE TASK ERROR(%u)!\n", __LINE__);
@@ -268,6 +282,22 @@ static void MX_USART3_UART_Init(void)
 
 }
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel4_5_6_7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
+
+}
+
 /**
   * @brief GPIO Initialization Function
   * @param None
@@ -283,10 +313,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_12|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PB2 PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA12 */
   GPIO_InitStruct.Pin = GPIO_PIN_12;
@@ -327,6 +364,44 @@ PUTCHAR_PROTOTYPE
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
   return ch;
+}
+
+bool sys_init()
+{
+  bc_reset();
+
+  if (!bc_init())
+  {
+    sys_reset();
+    return false;
+  }
+
+  if (!bc_pdp_act())
+  {
+    sys_reset();
+    return false;
+  }
+
+  if (!bc_conn_LWM2M())
+  {
+    sys_reset();
+    return false;
+  }
+
+  if (!bc_init_gnss())
+  {
+    sys_reset();
+    return false;
+  }
+  printf(">> System started.\n");
+  printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n\n");
+  printf("Hi, I'm LeAI mini:)\n\n");
+  printf("Albert created first generation LeAI on March 17, 2020,\n");
+  printf("I am created on May 27, 2020.\n");
+  printf("Time flies, come on!\n");
+  printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n");
+
+  return true;
 }
 
 /* USER CODE END 4 */

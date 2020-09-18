@@ -368,7 +368,7 @@
               <MiscControls/>
               <Define>USE_HAL_DRIVER,STM32F072xB</Define>
               <Undefine/>
-              <IncludePath>../Core/Inc;       ../Drivers/STM32F0xx_HAL_Driver/Inc;       ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;       ../Drivers/CMSIS/Device/ST/STM32F0xx/Include;       ../Drivers/CMSIS/Include;       ../Drivers/led;       ../Middleware/task</IncludePath>
+              <IncludePath>../Core/Inc; ../Drivers/STM32F0xx_HAL_Driver/Inc; ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F0xx/Include; ../Drivers/CMSIS/Include; ../Drivers/led; ../Middleware/task; ../Middleware/bc20; ../Middleware/timer</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -565,6 +565,16 @@
               <FileName>task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middleware\task\task.c</FilePath>
+            </File>
+            <File>
+              <FileName>bc20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middleware\bc20\bc20.c</FilePath>
+            </File>
+            <File>
+              <FileName>timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middleware\timer\timer.c</FilePath>
             </File>
           </Files>
         </Group>

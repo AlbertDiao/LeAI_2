@@ -15,6 +15,7 @@
 #include "main.h"
 #include "led.h"
 #include "timer.h"
+extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
 char *strx;
@@ -47,12 +48,12 @@ bool bc_lock()
 void bc_reset()
 {
     //RESET
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
     osDelay(100);
     //POWKEY
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
     osDelay(800);
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     osDelay(3000);
 }
 

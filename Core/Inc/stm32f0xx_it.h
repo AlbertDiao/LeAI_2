@@ -46,8 +46,8 @@ typedef struct
 typedef struct 
 {
   stu_uartDat buf[UART_FIFO_LEN];
-  uint8_t header; //队列头部指针,指向第一个可读元素
-  uint8_t tail; //队列尾部指针，指向可读元素之后的第一个空元素，当header和tail重合时，说明队列为空。当队列溢出时不存数据
+  uint8_t header; //队列头部指针,指向第一个可读元�?
+  uint8_t tail; //队列尾部指针，指向可读元素之后的第一个空元素，当header和tail重合时，说明队列为空。当队列溢出时不存数�?
 }stu_uartFifo;
 
 extern uint8_t uart1_buf[BUF_LEN];
@@ -75,6 +75,7 @@ void HardFault_Handler(void);
 void SVC_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void DMA1_Channel4_5_6_7_IRQHandler(void);
 void USART1_IRQHandler(void);
 void USART3_4_IRQHandler(void);
 /* USER CODE BEGIN EFP */
