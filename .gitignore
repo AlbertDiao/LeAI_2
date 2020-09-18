@@ -1,0 +1,17 @@
+*.swp
+*.*~
+*.o
+*.htm
+*.afx
+*.Albert
+*.hex
+*.map
+*.dep
+*.crf
+*.d
+*.iex
+*.axf
+*.lnp
+*.sct
+*.lst
+*.~vsdx
