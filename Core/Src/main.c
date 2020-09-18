@@ -24,6 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "task.h"
+#include "led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,6 +48,7 @@ IWDG_HandleTypeDef hiwdg;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+uint8_t task_led = Task_00;
 
 /* USER CODE END PV */
 
@@ -55,6 +58,7 @@ static void MX_GPIO_Init(void);
 static void MX_IWDG_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
+void led_blink(void);
 
 /* USER CODE END PFP */
 
@@ -94,7 +98,14 @@ int main(void)
   MX_IWDG_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-    printf("hello, Lele\r\n");
+
+  printf("hello, Lele\r\n");
+  led_close(2);
+  if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_100MS * 3)) || (TASK_STARTED != startTask(task_led, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -102,7 +113,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    FEED_DOG;
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -222,14 +233,43 @@ static void MX_USART1_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_13, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PA13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB6 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
 /* USER CODE BEGIN 4 */
+
+void led_blink()
+{
+  led_toggen(LED_SYS);
+}
+
+
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #else
