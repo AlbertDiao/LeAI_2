@@ -368,7 +368,7 @@
               <MiscControls/>
               <Define>USE_HAL_DRIVER,STM32F072xB</Define>
               <Undefine/>
-              <IncludePath>../Core/Inc;      ../Drivers/STM32F0xx_HAL_Driver/Inc;      ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;      ../Drivers/CMSIS/Device/ST/STM32F0xx/Include;      ../Drivers/CMSIS/Include;      ../Drivers/led;      ../Middleware/task</IncludePath>
+              <IncludePath>../Core/Inc;       ../Drivers/STM32F0xx_HAL_Driver/Inc;       ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;       ../Drivers/CMSIS/Device/ST/STM32F0xx/Include;       ../Drivers/CMSIS/Include;       ../Drivers/led;       ../Middleware/task</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -421,6 +421,11 @@
         <Group>
           <GroupName>Application/User/Core</GroupName>
           <Files>
+            <File>
+              <FileName>tool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\tool.c</FilePath>
+            </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>

@@ -44,6 +44,14 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+uint8_t uart1_buf[BUF_LEN];
+//uint8_t uart2_buf[BUF_LEN];
+uint8_t uart3_buf[BUF_LEN];
+
+stu_uartFifo bc_uart_fifo;
+bool uart1_recv, bc_uart_recv, bms_uart_recv;
+uint32_t uart1_recv_len, bc_uart_recv_len, bms_uart_recv_len;
+uint32_t uart1_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 
 /* USER CODE END PV */
 
@@ -59,6 +67,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -156,7 +165,91 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 1 */
 }
 
-/* USER CODE BEGIN 1 */
+/**
+  * @brief This function handles USART3 and USART4 global interrupts.
+  */
+void USART3_4_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART3_4_IRQn 0 */
 
+  /* USER CODE END USART3_4_IRQn 0 */
+  HAL_UART_IRQHandler(&huart3);
+  /* USER CODE BEGIN USART3_4_IRQn 1 */
+
+  /* USER CODE END USART3_4_IRQn 1 */
+}
+
+/* USER CODE BEGIN 1 */
+void bms_uart_clear()
+{
+  //uart2_buf[0] = '\0';
+  HAL_UART_DMAStop(&huart3); //
+  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+
+  memset(uart1_buf, 0x00, BUF_LEN);
+  uart1_recv_len = 0;
+  uart1_recv = false;
+  uart1_dma_len = BUF_LEN;
+  HAL_UART_Receive_DMA(&huart3, uart1_buf, uart1_dma_len); //重新打开DMA接收
+
+  /*
+    HAL_UART_DMAStop(&huart3);//
+    __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+    HAL_UART_Receive_DMA(&huart3,uart2_buf, BUF_LEN);//重新打开DMA接收
+    */
+}
+
+void bc_uart_clear()
+{
+  //uart2_buf[0] = '\0';
+  HAL_UART_DMAStop(&huart3); //
+  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+
+  /*
+  memset(uart2_buf, 0x00, BUF_LEN);
+  uart2_recv_len = 0;
+  uart2_recv = false;
+  bc_uart_dma_len = BUF_LEN;
+  */
+  bc_uart_fifo.header = bc_uart_fifo.tail = 0;
+  memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
+  HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //重新打开DMA接收
+
+  /*
+    HAL_UART_DMAStop(&huart3);//
+    __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+    HAL_UART_Receive_DMA(&huart3,uart2_buf, BUF_LEN);//重新打开DMA接收
+    */
+}
+
+//当uart3缓冲区有数据时，将数据取出，并清空缓冲区
+uint16_t bc_uart_load_buf(char *rcv)
+{
+  uint16_t len;
+
+#ifdef _COMM_DEEP
+  printf("\r\nuart3_load_buf,header=%u,tail=%u", bc_uart_fifo.header, bc_uart_fifo.tail);
+#endif
+
+  if (bc_uart_fifo.header == bc_uart_fifo.tail)
+    return 0;
+
+#ifdef _COMM_DEEP
+  printf("|1");
+#endif
+  HAL_UART_DMAStop(&huart3);
+  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+
+  memcpy(rcv, bc_uart_fifo.buf[bc_uart_fifo.header].dat, bc_uart_fifo.buf[bc_uart_fifo.header].len);
+  len = bc_uart_fifo.buf[bc_uart_fifo.header].len;
+  memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
+  bc_uart_fifo.header++;
+  if (bc_uart_fifo.header >= UART_FIFO_LEN)
+    bc_uart_fifo.header = 0;
+
+  bc_uart_dma_len = BUF_LEN;
+  HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.header].dat, BUF_LEN); //重新打开DMA接收
+  return len;
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
