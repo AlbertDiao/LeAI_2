@@ -103,7 +103,7 @@ int main(void)
   led_open(0);
   led_close(1);
   led_close(2);
-  if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_100MS * 3)) || (TASK_STARTED != startTask(task_led, 1)))
+  if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S)) || (TASK_STARTED != startTask(task_led, 1)))
   {
     printf("CREATE TASK ERROR(%u)!\n", __LINE__);
     return 1;
@@ -117,7 +117,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      FEED_DOG;
+    FEED_DOG;
+    task_handler();
   }
   /* USER CODE END 3 */
 }
@@ -266,6 +267,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+//void SysTick_Handler(void)
+//{
+//  systick_count++;
+//  HAL_IncTick();
+//  HAL_SYSTICK_IRQHandler();
+//}
 
 void led_blink()
 {
