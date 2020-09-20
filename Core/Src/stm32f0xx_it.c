@@ -23,6 +23,8 @@
 #include "stm32f0xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+
 #include "task.h"
 
 /* USER CODE END Includes */
@@ -46,7 +48,7 @@
 /* USER CODE BEGIN PV */
 uint8_t uart1_buf[BUF_LEN];
 //uint8_t uart2_buf[BUF_LEN];
-uint8_t uart3_buf[BUF_LEN];
+//uint8_t uart3_buf[BUF_LEN];
 
 stu_uartFifo bc_uart_fifo;
 bool uart1_recv, bc_uart_recv, bms_uart_recv;
@@ -66,6 +68,8 @@ uint32_t uart1_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern UART_HandleTypeDef huart1;
@@ -154,6 +158,21 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 channel 2 and 3 interrupts.
+  */
+void DMA1_Channel2_3_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel2_3_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart3_tx);
+  HAL_DMA_IRQHandler(&hdma_usart3_rx);
+  /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel2_3_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 channel 4, 5, 6 and 7 interrupts.
   */
 void DMA1_Channel4_5_6_7_IRQHandler(void)
@@ -161,8 +180,8 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart3_rx);
-  HAL_DMA_IRQHandler(&hdma_usart3_tx);
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 1 */
@@ -174,11 +193,21 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
+  uint32_t tmp_flag = 0;
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
 
+  /* USER CODE BEGIN USART1_IRQn 1 */
+    tmp_flag = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
+    if ((tmp_flag != RESET))
+    {
+        HAL_UART_DMAStop(&huart1);
+
+        __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+
+        HAL_UART_Receive_DMA(&huart1, uart1_buf, BUF_LEN); //重新打开DMA接收
+    }
   /* USER CODE END USART1_IRQn 1 */
 }
 
@@ -188,11 +217,56 @@ void USART1_IRQHandler(void)
 void USART3_4_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_4_IRQn 0 */
-
+  uint32_t tmp_flag = 0;
+  uint32_t temp;
+  char *str;
   /* USER CODE END USART3_4_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_4_IRQn 1 */
-
+//尾部维护和数据接�?
+  if (USART3 == huart3.Instance)
+  {
+    tmp_flag = __HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE);
+    if ((tmp_flag != RESET))
+    {
+      HAL_UART_DMAStop(&huart3);
+      __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+      //判断fifo是否已经满了
+      //将数据保�?
+      str = strstr((char*)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
+      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); //获取DMA中未传输的数据个�?
+      if(temp == 0)
+          goto end_recv;
+        //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
+      //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
+      //首先判断是否是控制命令，如果是则存入控制命令处理的fifo
+//      if (str != NULL)
+//      {
+//        if (nb_ctrl.has_dat == false)
+//        {
+//          memcpy(nb_ctrl.dat, str, temp);
+//          nb_ctrl.dat[temp] = 0x00;
+//          nb_ctrl.has_dat = true;
+//        }
+//      }
+//      else
+      {
+        //如果队列已经满了，直接忽�?
+        if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
+        {
+        }
+        else
+        {
+          bc_uart_fifo.buf[bc_uart_fifo.tail].len = temp;
+          bc_uart_fifo.tail++;
+          if (bc_uart_fifo.tail >= UART_FIFO_LEN)
+            bc_uart_fifo.tail = 0;
+        }
+      }
+    }
+    end_recv:
+    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //重新打开DMA接收
+  }
   /* USER CODE END USART3_4_IRQn 1 */
 }
 

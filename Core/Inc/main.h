@@ -37,7 +37,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-extern IWDG_HandleTypeDef hiwdg;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -47,7 +46,10 @@ extern IWDG_HandleTypeDef hiwdg;
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FEED_DOG  __HAL_IWDG_RELOAD_COUNTER(&hiwdg)
+//extern IWDG_HandleTypeDef hiwdg;
+//#define FEED_DOG  __HAL_IWDG_RELOAD_COUNTER(&hiwdg)
+#define FEED_DOG 
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

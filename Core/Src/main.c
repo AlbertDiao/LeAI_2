@@ -44,10 +44,10 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-IWDG_HandleTypeDef hiwdg;
-
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
@@ -60,7 +60,6 @@ uint8_t task_led = Task_00;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_IWDG_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
@@ -103,19 +102,24 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_IWDG_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
-  printf("hello, Lele\r\n");
+  __HAL_DBGMCU_FREEZE_IWDG(); //调试时关闭看门狗
+  
+  //printf("hello, Lele\r\n");
+  FEED_DOG;
+  #if defined(DBGMCU_APB1_FZ_DBG_IWDG_STOP)
+    printf("DBGMCU_APB1_FZ_DBG_IWDG_STOP defined.\r\n");
+    #endif
+  //看门狗时间Tout = 4*4096/40000 = 0.4096S
   led_open(0);
   led_close(1);
   led_close(2);
   
   if (!sys_init())
   {
-    printf("绯荤粺鍒濆鍖栧け璐ワ紒");
+    printf("系统初始化失败！");
     while (1)
       ;
   }
@@ -152,9 +156,8 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
@@ -181,35 +184,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief IWDG Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_IWDG_Init(void)
-{
-
-  /* USER CODE BEGIN IWDG_Init 0 */
-
-  /* USER CODE END IWDG_Init 0 */
-
-  /* USER CODE BEGIN IWDG_Init 1 */
-
-  /* USER CODE END IWDG_Init 1 */
-  hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
-  hiwdg.Init.Window = 4095;
-  hiwdg.Init.Reload = 4095;
-  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN IWDG_Init 2 */
-
-  /* USER CODE END IWDG_Init 2 */
-
 }
 
 /**
@@ -242,6 +216,8 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+  HAL_UART_Receive_DMA(&huart1, uart1_buf, BUF_LEN); //
 
   /* USER CODE END USART1_Init 2 */
 
@@ -277,6 +253,10 @@ static void MX_USART3_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
+//  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
+  bc_uart_fifo.header = bc_uart_fifo.tail = 0;
+  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
+  HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.header].dat, BUF_LEN); //
 
   /* USER CODE END USART3_Init 2 */
 
@@ -292,6 +272,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Channel2_3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
   /* DMA1_Channel4_5_6_7_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
