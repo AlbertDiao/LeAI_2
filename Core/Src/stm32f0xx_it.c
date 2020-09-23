@@ -46,14 +46,16 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-uint8_t uart1_buf[BUF_LEN];
+uint8_t bms_uart_buf[BUF_LEN];
+uint8_t dbg_uart_buf[BUF_LEN];
+
 //uint8_t uart2_buf[BUF_LEN];
 //uint8_t uart3_buf[BUF_LEN];
 
 stu_uartFifo bc_uart_fifo;
-bool uart1_recv, bc_uart_recv, bms_uart_recv;
-uint32_t uart1_recv_len, bc_uart_recv_len, bms_uart_recv_len;
-uint32_t uart1_dma_len, bc_uart_dma_len, bms_uart_dma_len;
+bool dbg_uart_recv, bc_uart_recv, bms_uart_recv;
+uint32_t dbg_uart_recv_len, bc_uart_recv_len, bms_uart_recv_len;
+uint32_t dbg_uart_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 
 /* USER CODE END PV */
 
@@ -70,9 +72,12 @@ uint32_t uart1_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 /* USER CODE BEGIN EV */
 
@@ -165,8 +170,8 @@ void DMA1_Channel2_3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
 
   /* USER CODE END DMA1_Channel2_3_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart3_tx);
-  HAL_DMA_IRQHandler(&hdma_usart3_rx);
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
 
   /* USER CODE END DMA1_Channel2_3_IRQn 1 */
@@ -180,8 +185,10 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_tx);
-  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  HAL_DMA_IRQHandler(&hdma_usart3_rx);
+  HAL_DMA_IRQHandler(&hdma_usart3_tx);
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 1 */
@@ -205,9 +212,23 @@ void USART1_IRQHandler(void)
 
         __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-        HAL_UART_Receive_DMA(&huart1, uart1_buf, BUF_LEN); //重新打开DMA接收
+        HAL_UART_Receive_DMA(&huart1, dbg_uart_buf, BUF_LEN); //重新打开DMA接收
     }
   /* USER CODE END USART1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXTI line 26.
+  */
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
+  /* USER CODE END USART2_IRQn 1 */
 }
 
 /**
@@ -273,14 +294,14 @@ void USART3_4_IRQHandler(void)
 void bms_uart_clear()
 {
   //uart2_buf[0] = '\0';
-  HAL_UART_DMAStop(&huart3); //
-  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+  HAL_UART_DMAStop(&huart2); //
+  __HAL_UART_CLEAR_IDLEFLAG(&huart2);
 
-  memset(uart1_buf, 0x00, BUF_LEN);
-  uart1_recv_len = 0;
-  uart1_recv = false;
-  uart1_dma_len = BUF_LEN;
-  HAL_UART_Receive_DMA(&huart3, uart1_buf, uart1_dma_len); //重新打开DMA接收
+  memset(bms_uart_buf, 0x00, BUF_LEN);
+  bms_uart_recv_len = 0;
+  bms_uart_recv = false;
+  bms_uart_dma_len = BUF_LEN;
+  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, bms_uart_dma_len); //重新打开DMA接收
 
   /*
     HAL_UART_DMAStop(&huart3);//

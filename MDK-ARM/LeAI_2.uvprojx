@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F072xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;                   ../Drivers/STM32F0xx_HAL_Driver/Inc;                   ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;                   ../Drivers/CMSIS/Device/ST/STM32F0xx/Include;                   ../Drivers/CMSIS/Include;                   ../Drivers/led;                   ../Middleware/task;                   ../Middleware/bc20;                   ../Middleware/timer</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../Drivers/led;../Middleware/task;../Middleware/bc20;../Middleware/timer;../Middleware/bms</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -441,6 +441,21 @@
               <FileName>stm32f0xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f0xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_bms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\app_bms.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_gnss.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\app_gnss.c</FilePath>
+            </File>
+            <File>
+              <FileName>track.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\track.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -571,6 +586,11 @@
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middleware\timer\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>bms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middleware\bms\bms.c</FilePath>
             </File>
           </Files>
         </Group>

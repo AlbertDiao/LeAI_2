@@ -50,12 +50,14 @@ typedef struct
   uint8_t tail; //队列尾部指针，指向可读元素之后的第一个空元素，当header和tail重合时，说明队列为空。当队列溢出时不存数�?
 }stu_uartFifo;
 
-extern uint8_t uart1_buf[BUF_LEN];
+extern uint8_t bms_uart_buf[BUF_LEN];
 //extern uint8_t uart2_buf[BUF_LEN];
-extern uint8_t uart3_buf[BUF_LEN];
-extern bool uart1_recv,uart2_recv,uart3_recv;
-extern uint32_t uart1_recv_len,uart2_recv_len,uart3_recv_len;
-extern uint32_t uart1_dma_len, bc_uart_dma_len, uart3_dma_len;
+extern uint8_t dbg_uart_buf[BUF_LEN];
+
+extern bool bms_uart_recv,bc_uart_recv,dbg_uart_recv;
+extern uint32_t bms_uart_recv_len,bc_uart_recv_len,dbg_uart_recv_len;
+extern uint32_t bms_uart_dma_len, bc_uart_dma_len, dbg_uart_dma_len;
+
 extern stu_uartFifo bc_uart_fifo;
 /* USER CODE END ET */
 
@@ -78,6 +80,7 @@ void SysTick_Handler(void);
 void DMA1_Channel2_3_IRQHandler(void);
 void DMA1_Channel4_5_6_7_IRQHandler(void);
 void USART1_IRQHandler(void);
+void USART2_IRQHandler(void);
 void USART3_4_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

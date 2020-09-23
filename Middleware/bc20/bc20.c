@@ -15,7 +15,7 @@
 #include "main.h"
 #include "led.h"
 #include "timer.h"
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart_dbg;
 extern UART_HandleTypeDef huart3;
 
 char *strx;
@@ -162,9 +162,10 @@ bool bc_init_gnss(void) //启动GPS
 
     while (bc_lock())
         FEED_DOG;
+
     set_bc_lock(true);
     printf("*************\r\n");
-    printf("***gnss初始化\r\n");
+    printf("***GNSS SETUP\r\n");
     printf("*************\r\n");
 
     //retry = 0;

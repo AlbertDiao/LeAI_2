@@ -32,6 +32,9 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdbool.h"
+#include "bc20.h"
+#include "track.h"
 
 /* USER CODE END Includes */
 
@@ -61,6 +64,51 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
+#define MSG_LEN 100
+
+char *get_word(char *word, char word_len_max, char *str, char token);
+extern char msg[MSG_LEN];
+
+
+typedef struct
+{
+  uint8_t step;
+  bool wait_stop;//等待车辆停止
+}stu_father;
+
+typedef struct
+{
+  uint8_t step;
+  uint32_t times;
+  uint32_t uc_times; //没有捕获到电流的次数
+  bool need;
+}stu_need_path;
+
+typedef struct
+{
+  uint8_t step;
+  bool to_stop;
+  bool stopped;
+}stu_bms_read;
+
+typedef struct
+{
+  uint8_t step;
+  bool to_stop;
+  bool stopped;
+}stu_bms_upload;
+
+extern stu_track_t track;
+typedef struct
+{
+  uint32_t time;
+  uint8_t l_bms_read;
+  uint8_t l_bms_upload;
+  uint8_t l_gnss_read;
+  uint8_t l_gnss_upload;
+  uint8_t l_track;
+  bool bms_data_new;
+}stu_daemon;
 
 /* USER CODE END Private defines */
 

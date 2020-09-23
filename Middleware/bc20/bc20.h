@@ -25,6 +25,7 @@
 #define PACK_STATUS 30007
 #define PATH_RES 30008
 
+#define BUF_LEN 300
 #define NB_BUF_LEN BUF_LEN
 #define DBG_BUF_LEN BUF_LEN
 #define CMD_LEN BUF_LEN //nb的at指令最大字节数
