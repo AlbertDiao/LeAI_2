@@ -197,7 +197,6 @@ void USART1_IRQHandler(void)
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
-
   /* USER CODE BEGIN USART1_IRQn 1 */
     tmp_flag = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
     if ((tmp_flag != RESET))
@@ -223,7 +222,7 @@ void USART3_4_IRQHandler(void)
   /* USER CODE END USART3_4_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_4_IRQn 1 */
-//尾部维护和数据接�?
+//灏鹃儴缁存姢鍜屾暟鎹帴�??
   if (USART3 == huart3.Instance)
   {
     tmp_flag = __HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE);
@@ -231,15 +230,15 @@ void USART3_4_IRQHandler(void)
     {
       HAL_UART_DMAStop(&huart3);
       __HAL_UART_CLEAR_IDLEFLAG(&huart3);
-      //判断fifo是否已经满了
-      //将数据保�?
+      //鍒ゆ柇fifo鏄惁宸茬粡婊�?�簡
+      //灏嗘暟鎹繚�??
       str = strstr((char*)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
-      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); //获取DMA中未传输的数据个�?
+      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); //鑾峰彇DMA涓湭浼犺緭鐨勬暟鎹釜�??
       if(temp == 0)
           goto end_recv;
         //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
       //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
-      //首先判断是否是控制命令，如果是则存入控制命令处理的fifo
+      //棣栧厛鍒ゆ柇鏄惁鏄帶鍒跺懡浠わ紝濡傛灉鏄垯瀛樺叆鎺у埗鍛戒护澶勭悊鐨刦ifo
 //      if (str != NULL)
 //      {
 //        if (nb_ctrl.has_dat == false)
@@ -251,7 +250,7 @@ void USART3_4_IRQHandler(void)
 //      }
 //      else
       {
-        //如果队列已经满了，直接忽�?
+        //濡傛灉闃熷垪宸茬粡婊′簡锛岀洿鎺ュ拷�??
         if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
         {
         }
@@ -265,7 +264,7 @@ void USART3_4_IRQHandler(void)
       }
     }
     end_recv:
-    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //重新打开DMA接收
+    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //閲嶆柊鎵撳紑DMA鎺ユ�?
   }
   /* USER CODE END USART3_4_IRQn 1 */
 }

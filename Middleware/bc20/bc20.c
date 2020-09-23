@@ -50,11 +50,14 @@ void bc_reset()
     //RESET
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
     osDelay(100);
+    
     //POWKEY
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
     osDelay(800);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     osDelay(3000);
+          
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
 }
 
 void sys_reset()
@@ -69,7 +72,7 @@ bool bc_init(void)
 
     set_bc_lock(true);
     FEED_DOG;
-    bc_reset();
+    bc_reset(); 
 /*
     //RESET
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
@@ -446,7 +449,8 @@ HAL_StatusTypeDef nb_send_cmd(char *str)
     if (len > CMD_LEN)
         return HAL_ERROR;
     else
-        return HAL_UART_Transmit(&huart3, (uint8_t *)str, len, 2000);
+        return HAL_UART_Transmit(&huart3, (uint8_t *)str, len, 0xFFFF);
+
 }
 
 //安全向nb发送指令，包含重发

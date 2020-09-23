@@ -14,7 +14,7 @@ void osDelay(uint32_t ms)
 {
     while(ms--)
     {
-        for(int i =0; i<3333;i++)
+        for(int i =0; i<4999;i++)
         {
             //__NOP;
             FEED_DOG;

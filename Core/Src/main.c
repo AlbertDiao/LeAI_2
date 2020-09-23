@@ -65,7 +65,7 @@ static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void led_blink(void);
 bool sys_init(void);
-
+void dcdc_open(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -105,8 +105,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+
   __HAL_DBGMCU_FREEZE_IWDG(); //调试时关闭看门狗
-  
+  dcdc_open();
   //printf("hello, Lele\r\n");
   FEED_DOG;
   #if defined(DBGMCU_APB1_FZ_DBG_IWDG_STOP)
@@ -116,15 +117,16 @@ int main(void)
   led_open(0);
   led_close(1);
   led_close(2);
-  
+
   if (!sys_init())
   {
     printf("系统初始化失败！");
     while (1)
       ;
   }
-  
-  if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S)) || (TASK_STARTED != startTask(task_led, 1)))
+    //bc_reset();
+
+  if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S * 10)) || (TASK_STARTED != startTask(task_led, 1)))
   {
     printf("CREATE TASK ERROR(%u)!\n", __LINE__);
     return 1;
@@ -140,6 +142,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
     FEED_DOG;
     task_handler();
+//    osDelay(1000);
+//      led_blink();
   }
   /* USER CODE END 3 */
 }
@@ -247,13 +251,13 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
+  huart3.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
-//  __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
   bc_uart_fifo.header = bc_uart_fifo.tail = 0;
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
   HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.header].dat, BUF_LEN); //
@@ -292,14 +296,21 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_12|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+  /*Configure GPIO pins : PA5 PA6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB2 PB12 */
   GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_12;
@@ -371,11 +382,11 @@ bool sys_init()
     return false;
   }
 
-  if (!bc_init_gnss())
-  {
-    sys_reset();
-    return false;
-  }
+//  if (!bc_init_gnss())
+//  {
+//    sys_reset();
+//    return false;
+//  }
   printf(">> System started.\n");
   printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n\n");
   printf("Hi, I'm LeAI mini:)\n\n");
@@ -385,6 +396,25 @@ bool sys_init()
   printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n");
 
   return true;
+}
+
+/*
+开启dcdc：
+先开启VDD EN，使得DCDC电路开始工作
+等待500ms（如果示波器测试ok可以缩短这个时间）
+再开启VCC SET，设置为通过DCDC供电
+*/
+void dcdc_open(void)
+{
+    //先开启VDD EN，使得DCDC电路开始工作
+    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5, GPIO_PIN_SET);
+    
+    //等待500ms（如果示波器测试ok可以缩短这个时间）
+    osDelay(500);
+    
+    //再开启VCC SET，设置为通过DCDC供电
+    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_6, GPIO_PIN_SET);
+
 }
 
 /* USER CODE END 4 */
