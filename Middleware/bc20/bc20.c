@@ -47,16 +47,27 @@ bool bc_lock()
 //bc模块重置
 void bc_reset()
 {
+    int i;
     //RESET
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
     osDelay(100);
-    
+    led_toggen(LED_NB);
+
     //POWKEY
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
-    osDelay(800);
+    for (i = 0; i < 8; i++)
+    {
+        osDelay(100);
+        led_toggen(LED_NB);
+    }
+    
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
-    osDelay(3000);
-          
+    for (i = 0; i < 30; i++)
+    {
+        osDelay(100);
+        led_toggen(LED_NB);
+    }
+
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
 }
 
@@ -67,13 +78,13 @@ void sys_reset()
 }
 bool bc_init(void)
 {
-//    int retry = 0;
-//    bool err = false;
+    //    int retry = 0;
+    //    bool err = false;
 
     set_bc_lock(true);
     FEED_DOG;
-    bc_reset(); 
-/*
+    bc_reset();
+    /*
     //RESET
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
     osDelay(100);
@@ -83,7 +94,7 @@ bool bc_init(void)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
     */
 
-    led_toggen(LED_SYS);
+    led_toggen(LED_NB);
     printf("\r\n*************\n");
     printf("*bc模块初始化\n");
     printf("*************\n");
@@ -97,6 +108,7 @@ bool bc_init(void)
     }
     printf("Success.\r\n");
 
+    led_toggen(LED_NB);
     printf(">> Get CIMI:");
     if (!nb_cmd_wait_without("AT+CIMI\r\n", "ERROR", nb_recv, 1000, once_time))
     {
@@ -122,6 +134,7 @@ bool bc_init(void)
     // }
     // printf("Success.\r\n");
 
+    led_toggen(LED_NB);
     printf(">> BAND:");
     if (!nb_cmd_wait("AT+QBAND?\r\n", "OK", nb_recv, 1000, once_time))
     {
@@ -129,6 +142,7 @@ bool bc_init(void)
     }
     printf("Success.\r\n");
 
+    led_toggen(LED_NB);
     printf(">> CSQ:");
     if (!nb_cmd_wait("AT+CSQ\r\n", "+CSQ", nb_recv, 1000, once_time))
     {
@@ -143,6 +157,7 @@ bool bc_init(void)
         if (strstr(nb_recv, "+CEREG: 1,1") != NULL)
             break;
     */
+    led_toggen(LED_NB);
     if (!nb_cmd_wait("AT+CEREG?\r\n", "+CEREG:", nb_recv, 1000, once_time))
     {
         printf("Faild.\r\n");
@@ -156,7 +171,7 @@ bool bc_init(void)
 
 bool bc_init_gnss(void) //启动GPS
 {
-//    int retry = 0;
+    //    int retry = 0;
     uint32_t g_mode;
     char *str;
 
@@ -171,6 +186,7 @@ bool bc_init_gnss(void) //启动GPS
     //retry = 0;
     bc_uart_clear();
 
+    led_toggen(LED_NB);
     if (!nb_cmd_wait("AT+QGNSSC?\r\n", "+QGNSSC:", nb_recv, 1000, once_time))
     {
         printf("Get QGNSS mode failed.\r\n");
@@ -183,6 +199,7 @@ bool bc_init_gnss(void) //启动GPS
         printf("QGNSSC mode=%u.\r\n", g_mode);
     }
 
+    led_toggen(LED_NB);
     //如果gnss没有开启，则开启
     if (g_mode == 0)
     {
@@ -215,6 +232,7 @@ bool bc_init_gnss(void) //启动GPS
     // printf("Success.\r\n");
 
     printf(">> set QGNSSRD..\r\n");
+    led_toggen(LED_NB);
     //暂时跳过失败，Albert
     //if (!nb_cmd_wait_without("AT+QGNSSRD=\"NMEA/RMC\"\r\n", "ERROR", nb_recv, 1000, once_time))
     if (!nb_cmd_wait("AT+QGNSSRD=\"NMEA/RMC\"\r\n", "$GNRMC", nb_recv, 1000, once_time))
@@ -241,6 +259,7 @@ bool bc_pdp_act(void) //激活场景，为连接服务器做准备
     printf("****pdp初始化\r\n");
     printf("*************\r\n");
 
+    led_toggen(LED_NB);
     printf(">> set CGPADDR..");
     bc_uart_clear();
     if (!nb_cmd_wait("AT+CGPADDR=1\r\n", "OK", nb_recv, 1000, once_time))
@@ -251,6 +270,7 @@ bool bc_pdp_act(void) //激活场景，为连接服务器做准备
     printf("Success.\r\n");
 
     printf(">> ACT..\r\n");
+    led_toggen(LED_NB);
     if (!nb_cmd_wait("AT+CGSN=1\r\n", "+CGSN: ", nb_recv, 1000, once_time))
     {
         printf("Faild.\r\n");
@@ -265,6 +285,7 @@ bool bc_pdp_act(void) //激活场景，为连接服务器做准备
     printf("Success.\r\n");
 
     printf(">> Check ACT...");
+    led_toggen(LED_NB);
     if (!nb_cmd_wait("AT+CGATT?\r\n", "+CGATT: 1", nb_recv, 1000, once_time))
     {
         printf("Faild.\r\n");
@@ -290,6 +311,7 @@ bool bc_conn_LWM2M(void)
     printf("**LWM2M初始化\r\n");
     printf("*************\r\n");
 
+    led_toggen(LED_NB);
     if (nb_cmd_wait("AT+MIPLDELETE=0\r\n", "OK", nb_recv, 1000, 2000))
     {
         printf("与平台连接已清除。\r\n");
@@ -299,6 +321,7 @@ bool bc_conn_LWM2M(void)
         printf("无连接或清除失败。\r\n");
     }
 
+    led_toggen(LED_NB);
     if (!nb_cmd_wait("AT+MIPLCREATE\r\n", "OK", nb_recv, 1000, 5000))
     {
         //osDelay(1000);
@@ -313,6 +336,7 @@ bool bc_conn_LWM2M(void)
         printf("LWM2M Started.\n");
     }
 
+    led_toggen(LED_NB);
     //注册PACK对象
     printf("Add Object.\n");
     sprintf(atstr, "AT+MIPLADDOBJ=0,%d,1,\"1\",10,10\r\n", BAT_OBJ);
@@ -324,6 +348,7 @@ bool bc_conn_LWM2M(void)
     }
     printf("Success.\r\n");
 
+    led_toggen(LED_NB);
     printf(">> Get object number..");
     retry = 0;
     while (retry <= retry_max)
@@ -335,6 +360,7 @@ bool bc_conn_LWM2M(void)
         printf("retry(%u)\r\n", retry);
     }
 
+    led_toggen(LED_NB);
     if (retry > retry_max)
     {
         printf("Timeout error.\n");
@@ -342,6 +368,7 @@ bool bc_conn_LWM2M(void)
     }
 
     printf("\r\nwaiting for MIPLOBSERVE ");
+    led_toggen(LED_NB);
     tm_set(1, 20000);
     do
     {
@@ -380,6 +407,7 @@ bool bc_conn_LWM2M(void)
 
     //获取资源号
     printf(">> MIPLOBSERVERSP..\r\n");
+    led_toggen(LED_NB);
     memset(atstr, 0, CMD_LEN);
     sprintf(atstr, "AT+MIPLOBSERVERSP=0,%s,1\r\n", objtnum);
     retry = 0;
@@ -412,6 +440,7 @@ bool bc_conn_LWM2M(void)
     }
 
     printf(">> MIPLDISCOVERRSP..\n");
+    led_toggen(LED_NB);
     memset(atstr, 0, CMD_LEN);
     sprintf(strtmp, "%u;%u;%u;%u;%u;%u;%u", NTC_RES, CELL_RES_1_5, CELL_RES_6_10, CELL_RES_11_15, CELL_RES_15_20, PACK_RES, PACK_STATUS);
     sprintf(atstr, "AT+MIPLDISCOVERRSP=0,%s,1,%d,\"%s\"\r\n", distnum, strlen(strtmp), strtmp);
@@ -451,7 +480,6 @@ HAL_StatusTypeDef nb_send_cmd(char *str)
         return HAL_ERROR;
     else
         return HAL_UART_Transmit(&huart3, (uint8_t *)str, len, 0xFFFF);
-
 }
 
 //安全向nb发送指令，包含重发
@@ -522,7 +550,7 @@ bool nb_cmd_sync(char *cmd, char *rcv, uint32_t *len, uint32_t time_inv, uint32_
     do
     {
         FEED_DOG;
-        led_toggen(LED_SYS);
+        led_toggen(LED_NB);
         //清除串口数据接收标志
         bc_uart_clear();
 
@@ -575,7 +603,7 @@ bool nb_cmd_wait(char *cmd, char *resp, char *rcv, uint32_t time_inv, uint32_t t
     do
     {
         FEED_DOG;
-        led_toggen(LED_SYS);
+        led_toggen(LED_NB);
         //清除串口数据接收标志
         //bc_uart_clear();
 
@@ -650,7 +678,7 @@ bool nb_cmd_wait_without(char *cmd, char *resp, char *rcv, uint32_t time_inv, ui
     do
     {
         FEED_DOG;
-        led_toggen(LED_SYS);
+        led_toggen(LED_NB);
         //清除串口数据接收标志
         bc_uart_clear();
 
@@ -716,8 +744,8 @@ bool nb_cmd_async(char *cmd)
 void task_uart2_lookup()
 {
 #define LU_MSG_LEN 10
-    char lu_msg[LU_MSG_LEN];  //存放NB命令下发的body.arg的内容
-    char pri_atstr[50]; //存放NB命令下发的body.arg的内容
+    char lu_msg[LU_MSG_LEN]; //存放NB命令下发的body.arg的内容
+    char pri_atstr[50];      //存放NB命令下发的body.arg的内容
     char *sx;
     int offset;
 

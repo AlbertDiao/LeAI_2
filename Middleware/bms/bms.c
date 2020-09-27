@@ -14,7 +14,7 @@
 #include "tool.h"
 
 #define BMS_SEND_SIZE 270
-#define _MOCK_BAT
+//#define _MOCK_BAT
 
 extern UART_HandleTypeDef huart2;
 
@@ -32,6 +32,7 @@ stu_bat_status bat_status;
 
 void bms_init()
 {
+    //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 }
 
 uint8_t crc(uint8_t* dat, uint8_t len)
@@ -194,7 +195,7 @@ bool bms_get_v()
 bool bms_get_ntc()
 {
 #ifndef _MOCK_BAT
-    //printf("bms_get_ntc:");
+    printf("|bms_get_ntc:");
     //18 FF 80 11 00 B3
     bms_send[0] = 0x18;
     bms_send[1] = 0xFF;
@@ -205,7 +206,10 @@ bool bms_get_ntc()
     bms_cmd_sync(bms_send, bms_rcv, &bms_rcv_len, 2000);
 
     if(bms_rcv_len != 11)
+    {
+        printf("failed.|");
         return false;
+    }
     for(int i = 0; i< 5;i++)
     {
         ntc[i] = bms_rcv[5+i];

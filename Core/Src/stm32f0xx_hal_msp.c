@@ -171,8 +171,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     PA3     ------> USART2_RX 
     */
     GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF1_USART2;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -201,7 +201,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     hdma_usart2_tx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_usart2_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_usart2_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_usart2_tx.Init.Mode = DMA_CIRCULAR;
+    hdma_usart2_tx.Init.Mode = DMA_NORMAL;
     hdma_usart2_tx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_usart2_tx) != HAL_OK)
     {

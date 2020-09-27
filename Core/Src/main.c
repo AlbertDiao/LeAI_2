@@ -63,9 +63,9 @@ DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 /*
-uart1:dbg
-uart2:bms
-uart3:bc
+uart1:dbg, 115200
+uart2:bms, 4800
+uart3:bc, 115200
 */
 #define UPLOAD_RETRY_MAX 10 //数据上传最大重试次数
 bool bms_data_new;
@@ -157,11 +157,17 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  /*
+  串口使用说明
+  USART1: Debug
+  USART2: 485,BMS
+  USART3: NB,BC20
+  */
   dcdc_open();                //开启DCDC电源
   __HAL_DBGMCU_FREEZE_IWDG(); //调试时关闭看门狗
 
-  dbg_uart_recv  = bms_uart_recv = bc_uart_recv = false;
-  dbg_uart_recv_len  = bms_uart_recv_len = bc_uart_recv_len = 0;
+  dbg_uart_recv = bms_uart_recv = bc_uart_recv = false;
+  dbg_uart_recv_len = bms_uart_recv_len = bc_uart_recv_len = 0;
   dbg_uart_dma_len = bms_uart_dma_len = bc_uart_dma_len = BUF_LEN;
 
   memset(&bms_upload, 0x00, sizeof(stu_bms_upload));
@@ -174,10 +180,15 @@ int main(void)
   printf("DBGMCU_APB1_FZ_DBG_IWDG_STOP defined.\r\n");
 #endif
   //看门狗时间Tout = 4*4096/40000 = 0.4096S
-  led_open(0);
+  led_close(0);
   led_close(1);
   led_close(2);
+  led_close(3);
+  led_close(4);
+  led_close(5);
 
+  led_open(LED_SYS);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
   if (!sys_init())
   {
     printf("系统初始化失败！");
@@ -352,7 +363,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 38400;
+  huart2.Init.BaudRate = 4800;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -366,6 +377,8 @@ static void MX_USART2_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART2_Init 2 */
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, BUF_LEN); //
 
   /* USER CODE END USART2_Init 2 */
 
@@ -444,35 +457,32 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8 
+                          |GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_12|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14 
+                          |GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA5 PA6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA5 PA6 PA8 PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8|GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_12;
+  /*Configure GPIO pins : PB2 PB12 PB13 PB14 
+                           PB6 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14 
+                          |GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -523,31 +533,42 @@ void dcdc_open(void)
 
 bool sys_init()
 {
+  led_toggen(LED_SYS);
+  led_open(LED_NB);
   bc_reset();
 
+  led_toggen(LED_SYS);
   if (!bc_init())
   {
     sys_reset();
     return false;
   }
 
+  led_toggen(LED_SYS);
   if (!bc_pdp_act())
   {
     sys_reset();
     return false;
   }
 
+  led_toggen(LED_SYS);
   if (!bc_conn_LWM2M())
   {
     sys_reset();
     return false;
   }
 
-   if (!bc_init_gnss())
-   {
-     sys_reset();
-     return false;
-   }
+  led_toggen(LED_SYS);
+  if (!bc_init_gnss())
+  {
+    sys_reset();
+    return false;
+  }
+  led_toggen(LED_SYS);
+
+  //bms_init();
+  //led_toggen(LED_SYS);
+
   printf(">> System started.\n");
   printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n\n");
   printf("Hi, I'm LeAI mini:)\n\n");
@@ -1043,7 +1064,6 @@ void data_upload_daemon()
   }
 }
 
-
 //命令执行进程
 void nb_cmd_exe()
 {
@@ -1103,7 +1123,6 @@ void nb_cmd_exe()
   }
 }
 
-
 /*什么时候需要采集轨迹？
  每次有放电电流持续20秒钟后采集一次
  采集完以后，除非连续20秒没有放电电流，否则不会继续计算是否需要采集
@@ -1136,7 +1155,7 @@ void need_path_task()
       if ((need_path.uc_times < 42))
       {
         need_path.need = true;
-        led_open(LED_SYS);
+        led_open(LED_PATH);
         need_path.step = 0x02;
       }
       else
@@ -1152,7 +1171,7 @@ void need_path_task()
   case 0x02:
     if (!need_path.need)
     {
-      led_close(LED_SYS); //数据上传完以后关掉指示灯
+      led_close(LED_PATH); //数据上传完以后关掉指示灯
       need_path.step = 0x03;
       need_path.times = 0;
       need_path.uc_times = 0;
@@ -1169,13 +1188,13 @@ void need_path_task()
     }
     else
     {
-      led_open(LED_SYS); //中途如果重新计数，那么重新打开灯
+      led_open(LED_PATH); //中途如果重新计数，那么重新打开灯
       need_path.uc_times = 0;
     }
     //持续若干次没有放电电流，则认为停止时间足够
     if (need_path.uc_times > 30)
     {
-      led_close(LED_SYS); //当空闲时间达标以后，关掉指示灯，提示可以上电流了
+      led_close(LED_PATH); //当空闲时间达标以后，关掉指示灯，提示可以上电流了
       need_path.times = 0;
       need_path.uc_times = 0;
       need_path.step = 0x01;

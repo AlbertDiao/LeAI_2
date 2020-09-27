@@ -36,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
- 
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -205,15 +205,15 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-    tmp_flag = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
-    if ((tmp_flag != RESET))
-    {
-        HAL_UART_DMAStop(&huart1);
+  tmp_flag = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
+  if ((tmp_flag != RESET))
+  {
+    HAL_UART_DMAStop(&huart1);
 
-        __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-        HAL_UART_Receive_DMA(&huart1, dbg_uart_buf, BUF_LEN); //重新打开DMA接收
-    }
+    HAL_UART_Receive_DMA(&huart1, dbg_uart_buf, BUF_LEN); //重新打开DMA接收
+  }
   /* USER CODE END USART1_IRQn 1 */
 }
 
@@ -223,11 +223,20 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
+  uint32_t tmp_flag = 0;
 
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */
+  tmp_flag = __HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE);
+  if ((tmp_flag != RESET))
+  {
+    HAL_UART_DMAStop(&huart2);
 
+    __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+
+    HAL_UART_Receive_DMA(&huart2, bms_uart_buf, BUF_LEN); //重新打开DMA接收
+  }
   /* USER CODE END USART2_IRQn 1 */
 }
 
@@ -243,7 +252,7 @@ void USART3_4_IRQHandler(void)
   /* USER CODE END USART3_4_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_4_IRQn 1 */
-//灏鹃儴缁存姢鍜屾暟鎹帴�??
+  //灏鹃儴缁存姢鍜屾暟鎹帴�???
   if (USART3 == huart3.Instance)
   {
     tmp_flag = __HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE);
@@ -251,27 +260,27 @@ void USART3_4_IRQHandler(void)
     {
       HAL_UART_DMAStop(&huart3);
       __HAL_UART_CLEAR_IDLEFLAG(&huart3);
-      //鍒ゆ柇fifo鏄惁宸茬粡婊�?�簡
-      //灏嗘暟鎹繚�??
-      str = strstr((char*)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
-      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); //鑾峰彇DMA涓湭浼犺緭鐨勬暟鎹釜�??
-      if(temp == 0)
-          goto end_recv;
-        //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
+      //鍒ゆ柇fifo鏄惁宸茬粡婊�?�簡
+      //灏嗘暟鎹繚�???
+      str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
+      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); //鑾峰彇DMA涓湭浼犺緭鐨勬暟鎹釜�???
+      if (temp == 0)
+        goto end_recv;
+      //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
       //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
       //棣栧厛鍒ゆ柇鏄惁鏄帶鍒跺懡浠わ紝濡傛灉鏄垯瀛樺叆鎺у埗鍛戒护澶勭悊鐨刦ifo
-//      if (str != NULL)
-//      {
-//        if (nb_ctrl.has_dat == false)
-//        {
-//          memcpy(nb_ctrl.dat, str, temp);
-//          nb_ctrl.dat[temp] = 0x00;
-//          nb_ctrl.has_dat = true;
-//        }
-//      }
-//      else
+      //      if (str != NULL)
+      //      {
+      //        if (nb_ctrl.has_dat == false)
+      //        {
+      //          memcpy(nb_ctrl.dat, str, temp);
+      //          nb_ctrl.dat[temp] = 0x00;
+      //          nb_ctrl.has_dat = true;
+      //        }
+      //      }
+      //      else
       {
-        //濡傛灉闃熷垪宸茬粡婊′簡锛岀洿鎺ュ拷�??
+        //濡傛灉闃熷垪宸茬粡婊′簡锛岀洿鎺ュ拷�???
         if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
         {
         }
@@ -284,8 +293,8 @@ void USART3_4_IRQHandler(void)
         }
       }
     }
-    end_recv:
-    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //閲嶆柊鎵撳紑DMA鎺ユ�?
+  end_recv:
+    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //閲嶆柊鎵撳紑DMA鎺ユ�??
   }
   /* USER CODE END USART3_4_IRQn 1 */
 }

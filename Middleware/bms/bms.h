@@ -69,6 +69,7 @@ typedef struct
     } sys2;
 } stu_bat_status;
 
+extern void bms_init();
 extern bool bms_get_v(void);
 extern bool bms_get_ntc(void);
 extern bool bms_get_i(void);

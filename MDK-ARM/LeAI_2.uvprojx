@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F072xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../Drivers/led;../Middleware/task;../Middleware/bc20;../Middleware/timer;../Middleware/bms</IncludePath>
+              <IncludePath>../Core/Inc;           ../Drivers/STM32F0xx_HAL_Driver/Inc;           ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;           ../Drivers/CMSIS/Device/ST/STM32F0xx/Include;           ../Drivers/CMSIS/Include;           ../Drivers/led;           ../Middleware/task;           ../Middleware/bc20;           ../Middleware/timer;           ../Middleware/bms</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -428,21 +428,6 @@
               <FilePath>..\Core\Src\tool.c</FilePath>
             </File>
             <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/main.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f0xx_it.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/stm32f0xx_it.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f0xx_hal_msp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/stm32f0xx_hal_msp.c</FilePath>
-            </File>
-            <File>
               <FileName>app_bms.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\app_bms.c</FilePath>
@@ -456,6 +441,21 @@
               <FileName>track.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\track.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/main.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f0xx_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/stm32f0xx_it.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f0xx_hal_msp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/stm32f0xx_hal_msp.c</FilePath>
             </File>
           </Files>
         </Group>
