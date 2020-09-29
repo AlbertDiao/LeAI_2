@@ -77,6 +77,8 @@ extern bool bms_get_pack_v(void);
 extern bool bms_get_soc(void);
 extern bool bms_get_fcc(void);
 extern bool bms_get_status(void);
+extern void tx_to_bms(void);
+extern void rx_from_bms(void);
 
 extern uint16_t cell_v[20];
 extern uint8_t ntc[5];

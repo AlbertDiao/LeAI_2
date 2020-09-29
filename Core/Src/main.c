@@ -56,6 +56,8 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
@@ -65,7 +67,7 @@ uart1:dbg, 115200
 uart2:bms, 4800
 uart3:bc, 115200
 */
-#define UPLOAD_RETRY_MAX 10 //数据上传�?大重试次�?
+#define UPLOAD_RETRY_MAX 10 //数据上传�?大重试�?��??
 bool bms_data_new;
 char msg[MSG_LEN];
 uint8_t upload_retry; //数据上传重试次数
@@ -162,7 +164,7 @@ int main(void)
   USART3: NB,BC20
   */
   dcdc_open();                //�?启DCDC电源
-  __HAL_DBGMCU_FREEZE_IWDG(); //调试时关闭看门狗
+  __HAL_DBGMCU_FREEZE_IWDG(); //调试时关�?看门�?
 
   dbg_uart_recv = bms_uart_recv = bc_uart_recv = false;
   dbg_uart_recv_len = bms_uart_recv_len = bc_uart_recv_len = 0;
@@ -184,18 +186,21 @@ int main(void)
   led_close(3);
   led_close(4);
   led_close(5);
-
-  led_open(LED_SYS);
   
-  //开启485电路
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET); //TTL -> 485
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET); //485 -> TTL
-//  if (!sys_init())
+  led_toggen(LED_SYS);
+  bms_init();
+  led_toggen(LED_SYS);
+//  while(1)
 //  {
-//    printf("系统初始化失败！");
-//    while (1)
-//      ;
+//      HAL_Delay(1000);
+//        led_toggen(LED_SYS);
 //  }
+  if (!sys_init())
+  {
+    printf("系统初�?�化失败�?");
+    while (1)
+      ;
+  }
 
   if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S)) || (TASK_STARTED != startTask(task_led, 1)))
   {
@@ -208,48 +213,48 @@ int main(void)
     return 1;
   }
 
-//  if ((TASK_INITIALIZED != configTask(task_bms_upload, data_upload, TASK_100MS)) || (TASK_STARTED != startTask(task_bms_upload, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_bms_upload, data_upload, TASK_100MS)) || (TASK_STARTED != startTask(task_bms_upload, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
 
-//  if ((TASK_INITIALIZED != configTask(task_upload_daemon, data_upload_daemon, TASK_1S)) || (TASK_STARTED != startTask(task_upload_daemon, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_upload_daemon, data_upload_daemon, TASK_1S)) || (TASK_STARTED != startTask(task_upload_daemon, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
 
-//  if ((TASK_INITIALIZED != configTask(task_gnss_read, gnss_read_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_read, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_gnss_read, gnss_read_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_read, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
 
-//  if ((TASK_INITIALIZED != configTask(task_gnss_upload, gnss_upload_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_upload, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_gnss_upload, gnss_upload_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_upload, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
 
-//  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_100MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_100MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
 
-//  if ((TASK_INITIALIZED != configTask(task_father, father_task, TASK_1S)) || (TASK_STARTED != startTask(task_father, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
-//  printf("begin run\n");
+  if ((TASK_INITIALIZED != configTask(task_father, father_task, TASK_1S)) || (TASK_STARTED != startTask(task_father, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
+  printf("begin run\n");
 
-//  if ((TASK_INITIALIZED != configTask(task_need_path, need_path_task, TASK_100MS * 5)) || (TASK_STARTED != startTask(task_need_path, 1)))
-//  {
-//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-//    return 1;
-//  }
+  if ((TASK_INITIALIZED != configTask(task_need_path, need_path_task, TASK_100MS * 5)) || (TASK_STARTED != startTask(task_need_path, 1)))
+  {
+    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+    return 1;
+  }
   printf("begin run\n");
 
   /* USER CODE END 2 */
@@ -467,7 +472,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -516,18 +521,18 @@ PUTCHAR_PROTOTYPE
 /*
 �?启dcdc�?
 先开启VDD EN，使得DCDC电路�?始工�?
-等待500ms（如果示波器测试ok可以缩短这个时间�?
-再开启VCC SET，设置为通过DCDC供电
+等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
+再开启VCC SET，�?�置为�?�过DCDC供电
 */
 void dcdc_open(void)
 {
   //先开启VDD EN，使得DCDC电路�?始工�?
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-  //等待500ms（如果示波器测试ok可以缩短这个时间�?
+  //等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
   osDelay(500);
 
-  //再开启VCC SET，设置为通过DCDC供电
+  //再开启VCC SET，�?�置为�?�过DCDC供电
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 }
 
@@ -566,9 +571,6 @@ bool sys_init()
   }
   led_toggen(LED_SYS);
 
-  //bms_init();
-  //led_toggen(LED_SYS);
-
   printf(">> System started.\n");
   printf("\n--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---\n\n");
   printf("Hi, I'm LeAI mini:)\n\n");
@@ -586,7 +588,7 @@ void data_read()
   switch (bms_read.step)
   {
   case 0x00:
-    //防止出现bms_data_new还没有被false，但是data_upload任务已经被干掉的情况导致锁死
+    //防�?�出现bms_data_new还没有�?�false，但是data_upload任务已经�?干掉的情况�?�致锁�??
     if (bms_read.to_stop)
     {
       bms_read.step = 0xFF;
@@ -1030,8 +1032,8 @@ void data_upload()
   }
 }
 
-//数据上传守护进程,1S运行1�?
-//如果连续30分钟step们都没有变化，那么就重启
+//数据上传守护进程,1S运�??1�?
+//如果连续30分钟step�?都没有变化，那么就重�?
 void data_upload_daemon()
 {
   if ((daemon.l_bms_upload != bms_upload.step) ||
@@ -1064,7 +1066,7 @@ void data_upload_daemon()
   }
 }
 
-//命令执行进程
+//命令执�?�进�?
 void nb_cmd_exe()
 {
 #define EX_MSG_LEN 10
@@ -1101,7 +1103,7 @@ void nb_cmd_exe()
     printf("msg_res = %u\r\n", msg_res);
     printf("msg_id = %u\r\n", msg_id);
     printf("EXE: msg={%s}\r\n", ex_msg);
-    //解析msg的�??,a:�?启， b：关�?
+    //解析msg的�??,a:�?�?�? b：关�?
     if (ex_msg[0] == 'a')
     {
       //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
@@ -1116,7 +1118,7 @@ void nb_cmd_exe()
     }
     nb_ctrl.has_dat = false;
     memset(nb_ctrl.dat, 0x00, NB_BUF_LEN);
-    //返回命令�?, 调用成功，第三个参数返回2
+    //返回命令�?, 调用成功，�??三个参数返回2
     //+MIPLEXECUTERSP: <ref>,<msgId>,<result> (2)
     sprintf(pri_atstr, "AT+MIPLEXECUTERSP=%u,%u,2\r\n", msg_res, msg_id);
     nb_cmd_async(pri_atstr);
@@ -1124,8 +1126,8 @@ void nb_cmd_exe()
 }
 
 /*�?么时候需要采集轨迹？
- 每次有放电电流持�?20秒钟后采集一�?
- 采集完以后，除非连续20秒没有放电电流，否则不会继续计算是否�?要采�?
+ 每�?�有放电电流持�??20秒钟后采集一�?
+ 采集完以后，除非连续20秒没有放电电流，否则不会继续计算�?否�??要采�?
 */
 void need_path_task()
 {
@@ -1137,8 +1139,8 @@ void need_path_task()
 
   case 0x01:
     bms_get_i();
-//累计电流持续时间
-//放电电流大于1A,pack_i在bms任务中被持续更新
+//�?计电流持�?时间
+//放电电流大于1A,pack_i在bms任务�?�?持续更新
 #define CUR_RUN_THE -500
     if (pack_i < CUR_RUN_THE)
     {
@@ -1160,7 +1162,7 @@ void need_path_task()
       }
       else
       {
-        //这段时间的无效点太多，重置计数器
+        //这�?�时间的无效点太多，重置计数�?
         need_path.times = 0;
         need_path.uc_times = 0;
       }
@@ -1180,21 +1182,21 @@ void need_path_task()
 
   case 0x03:
     bms_get_i();
-    //累计电流持续时间
-    //放电电流小于1A, 或�?�正在充电，被认为是不处于运行状�?
+    //�?计电流持�?时间
+    //放电电流小于1A, 或�?��?�在充电，�??认为�?不�?�于运�?�状�?
     if (pack_i >= CUR_RUN_THE)
     {
       need_path.uc_times++;
     }
     else
     {
-      led_open(LED_PATH); //中�?�如果重新计数，那么重新打开�?
+      led_open(LED_PATH); //�???��?�果重新计数，那么重新打�?�?
       need_path.uc_times = 0;
     }
-    //持续若干次没有放电电流，则认为停止时间足�?
+    //持续若干次没有放电电流，则�?�为停�?�时间足�?
     if (need_path.uc_times > 30)
     {
-      led_close(LED_PATH); //当空闲时间达标以后，关掉指示灯，提示可以上电流了
+      led_close(LED_PATH); //当空闲时间达标以后，关掉指示�?，提示可以上电流�?
       need_path.times = 0;
       need_path.uc_times = 0;
       need_path.step = 0x01;
@@ -1208,7 +1210,7 @@ void need_path_task()
 
 /*
 高级策略（father task�?
-判断是否�?要采集轨迹，如果�?要采集轨迹，则：
+判断�?否�??要采集轨迹，如果�?要采集轨迹，则：
 通知BMS采集和上传，gnss采集和上传的任务停掉
 等待上述任务都停�?
 �?掉上述任�?
@@ -1226,7 +1228,7 @@ void father_task()
     }
     break;
 
-  //通知任务停止
+  //通知任务停�??
   case 1:
     bms_read.to_stop = true;
     bms_upload.to_stop = true;
@@ -1265,7 +1267,7 @@ void father_task()
   case 0x05:
     if (track.run_over)
     {
-      //外部置位need_path，重新检测车辆持续运�?
+      //外部�?位need_path，重新�??测车辆持�?运�??
       need_path.need = false;
       killTask(task_track);
       printf("tasks reset\r\n");

@@ -223,13 +223,13 @@ bool bc_init_gnss(void) //启动GPS
     // }
     // printf("Success.\r\n");
 
-    // printf(">> set QGNSSDB..\r\n");
-    // if (!nb_cmd_wait("AT+QGNSSDB=1\r\n", "OK", nb_recv, 1000, once_time))
-    // {
-    //     printf("Faild.\r\n");
-    //     return false;
-    // }
-    // printf("Success.\r\n");
+    printf(">> set QGNSSDB..\r\n");
+    if (!nb_cmd_wait("AT+QGNSSDB=1\r\n", "OK", nb_recv, 1000, once_time))
+    {
+        printf("Faild.\r\n");
+        return false;
+    }
+    printf("Success.\r\n");
 
     printf(">> set QGNSSRD..\r\n");
     led_toggen(LED_NB);

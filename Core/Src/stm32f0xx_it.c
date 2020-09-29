@@ -72,6 +72,8 @@ uint32_t dbg_uart_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern UART_HandleTypeDef huart1;
@@ -82,7 +84,7 @@ extern UART_HandleTypeDef huart3;
 /* USER CODE END EV */
 
 /******************************************************************************/
-/*           Cortex-M0 Processor Interruption and Exception Handlers          */ 
+/*           Cortex-M0 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
   * @brief This function handles Non maskable interrupt.
@@ -183,6 +185,8 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
   HAL_DMA_IRQHandler(&hdma_usart3_rx);
   HAL_DMA_IRQHandler(&hdma_usart3_tx);
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
@@ -218,150 +222,161 @@ void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
   uint32_t tmp_flag = 0;
-  tmp_flag = __HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE);
-  if ((tmp_flag != RESET))
+  uint32_t temp;
+
+  tmp_flag = __HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE); //获取IDLE标志�?
+  if ((tmp_flag != RESET))                                 //idle标志被置�?
   {
-    __HAL_UART_CLEAR_IDLEFLAG(&huart2);
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+    __HAL_UART_CLEAR_IDLEFLAG(&huart2); //清除标志�?
+    //temp=UartHandle.Instance->SR;//清除状濁寄存器SR,读取SR寄存器可以实现清除SR寄存器的功能
+    //temp=UartHandle.Instance->DR;//读取数据寄存器中的数�?
 
+    HAL_UART_DMAStop(&huart2);                     //
+    temp = __HAL_DMA_GET_COUNTER(&hdma_usart2_rx); //获取DMA中未传输的数据个�?
+    bms_uart_recv_len = BUF_LEN - temp;               //总计数减去未传输的数据个数，得到已经接收的数据个�?
+    //HAL_UART_Transmit(&huart1 , uart1_buf, uart1_recv_len, 0xFFFF); //回显
+    bms_uart_recv = true; //接受完成标志位置1
+    HAL_UART_Receive_DMA(&huart2, bms_uart_buf, BUF_LEN); //重新打开DMA接收
+    /* USER CODE END USART2_IRQn 0 */
+    HAL_UART_IRQHandler(&huart2);
+    /* USER CODE BEGIN USART2_IRQn 1 */
+
+    /* USER CODE END USART2_IRQn 1 */
   }
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-
-  /* USER CODE END USART2_IRQn 1 */
 }
 
-/**
+  /**
   * @brief This function handles USART3 and USART4 global interrupts.
   */
-void USART3_4_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART3_4_IRQn 0 */
-  uint32_t tmp_flag = 0;
-  uint32_t temp;
-  char *str;
-  /* USER CODE END USART3_4_IRQn 0 */
-  HAL_UART_IRQHandler(&huart3);
-  /* USER CODE BEGIN USART3_4_IRQn 1 */
-      //尾部维护和数据接�?
-
-  if (USART3 == huart3.Instance)
+  void USART3_4_IRQHandler(void)
   {
-    tmp_flag = __HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE);
-    if ((tmp_flag != RESET))
+    /* USER CODE BEGIN USART3_4_IRQn 0 */
+    uint32_t tmp_flag = 0;
+    uint32_t temp;
+    char *str;
+    /* USER CODE END USART3_4_IRQn 0 */
+    HAL_UART_IRQHandler(&huart3);
+    /* USER CODE BEGIN USART3_4_IRQn 1 */
+    //尾部维护和数据接�?
+
+    if (USART3 == huart3.Instance)
     {
-      HAL_UART_DMAStop(&huart3);
-      __HAL_UART_CLEAR_IDLEFLAG(&huart3);
-        //判断fifo是否已经满了
-      //将数据保�?
-      str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
-      temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); 
-      if (temp == 0)
-        goto end_recv;
-      //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
-      //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
-      //首先判断是否是控制命令，如果是则存入控制命令处理的fifo
-      //      if (str != NULL)
-      //      {
-      //        if (nb_ctrl.has_dat == false)
-      //        {
-      //          memcpy(nb_ctrl.dat, str, temp);
-      //          nb_ctrl.dat[temp] = 0x00;
-      //          nb_ctrl.has_dat = true;
-      //        }
-      //      }
-      //      else
+      tmp_flag = __HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE);
+      if ((tmp_flag != RESET))
       {
-        //如果队列已经满了，直接忽�?
-        if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
+        HAL_UART_DMAStop(&huart3);
+        __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+        //判断fifo是否已经满了
+        //将数据保�?
+        str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
+        temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx);
+        if (temp == 0)
+          goto end_recv;
+        //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
+        //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
+        //首先判断是否是控制命令，如果是则存入控制命令处理的fifo
+        //      if (str != NULL)
+        //      {
+        //        if (nb_ctrl.has_dat == false)
+        //        {
+        //          memcpy(nb_ctrl.dat, str, temp);
+        //          nb_ctrl.dat[temp] = 0x00;
+        //          nb_ctrl.has_dat = true;
+        //        }
+        //      }
+        //      else
         {
-        }
-        else
-        {
-          bc_uart_fifo.buf[bc_uart_fifo.tail].len = temp;
-          bc_uart_fifo.tail++;
-          if (bc_uart_fifo.tail >= UART_FIFO_LEN)
-            bc_uart_fifo.tail = 0;
+          //如果队列已经满了，直接忽�?
+          if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
+          {
+          }
+          else
+          {
+            bc_uart_fifo.buf[bc_uart_fifo.tail].len = temp;
+            bc_uart_fifo.tail++;
+            if (bc_uart_fifo.tail >= UART_FIFO_LEN)
+              bc_uart_fifo.tail = 0;
+          }
         }
       }
+    end_recv:
+      HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //閲嶆柊鎵撳紑DMA鎺ユ??
     }
-  end_recv:
-    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //閲嶆柊鎵撳紑DMA鎺ユ??
+    /* USER CODE END USART3_4_IRQn 1 */
   }
-  /* USER CODE END USART3_4_IRQn 1 */
-}
 
-/* USER CODE BEGIN 1 */
-void bms_uart_clear()
-{
-//  HAL_UART_DMAStop(&huart2); 
-//  __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+  /* USER CODE BEGIN 1 */
+  void bms_uart_clear(void)
+  {
+    //  HAL_UART_DMAStop(&huart2);
+    //  __HAL_UART_CLEAR_IDLEFLAG(&huart2);
 
-  memset(bms_uart_buf, 0x00, BUF_LEN);
-  bms_uart_recv_len = 0;
-  bms_uart_recv = false;
-  bms_uart_dma_len = BUF_LEN;
-//  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, bms_uart_dma_len); //重新打开DMA接收
+    memset(bms_uart_buf, 0x00, BUF_LEN);
+    bms_uart_recv_len = 0;
+    bms_uart_recv = false;
+    bms_uart_dma_len = BUF_LEN;
+    //  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, bms_uart_dma_len); //重新打开DMA接收
 
-  /*
+    /*
     HAL_UART_DMAStop(&huart3);//
     __HAL_UART_CLEAR_IDLEFLAG(&huart3);
     HAL_UART_Receive_DMA(&huart3,uart2_buf, BUF_LEN);//重新打开DMA接收
     */
-}
+  }
 
-void bc_uart_clear()
-{
-  //uart2_buf[0] = '\0';
-  HAL_UART_DMAStop(&huart3); //
-  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+  void bc_uart_clear()
+  {
+    //uart2_buf[0] = '\0';
+    HAL_UART_DMAStop(&huart3); //
+    __HAL_UART_CLEAR_IDLEFLAG(&huart3);
 
-  /*
+    /*
   memset(uart2_buf, 0x00, BUF_LEN);
   uart2_recv_len = 0;
   uart2_recv = false;
   bc_uart_dma_len = BUF_LEN;
   */
-  bc_uart_fifo.header = bc_uart_fifo.tail = 0;
-  memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
-  HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //重新打开DMA接收
+    bc_uart_fifo.header = bc_uart_fifo.tail = 0;
+    memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
+    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.tail].dat, BUF_LEN); //重新打开DMA接收
 
-  /*
+    /*
     HAL_UART_DMAStop(&huart3);//
     __HAL_UART_CLEAR_IDLEFLAG(&huart3);
     HAL_UART_Receive_DMA(&huart3,uart2_buf, BUF_LEN);//重新打开DMA接收
     */
-}
+  }
 
-//当uart3缓冲区有数据时，将数据取出，并清空缓冲区
-uint16_t bc_uart_load_buf(char *rcv)
-{
-  uint16_t len;
-
-#ifdef _COMM_DEEP
-  printf("\r\nuart3_load_buf,header=%u,tail=%u", bc_uart_fifo.header, bc_uart_fifo.tail);
-#endif
-
-  if (bc_uart_fifo.header == bc_uart_fifo.tail)
-    return 0;
+  //当uart3缓冲区有数据时，将数据取出，并清空缓冲区
+  uint16_t bc_uart_load_buf(char *rcv)
+  {
+    uint16_t len;
 
 #ifdef _COMM_DEEP
-  printf("|1");
+    printf("\r\nuart3_load_buf,header=%u,tail=%u", bc_uart_fifo.header, bc_uart_fifo.tail);
 #endif
-  HAL_UART_DMAStop(&huart3);
-  __HAL_UART_CLEAR_IDLEFLAG(&huart3);
 
-  memcpy(rcv, bc_uart_fifo.buf[bc_uart_fifo.header].dat, bc_uart_fifo.buf[bc_uart_fifo.header].len);
-  len = bc_uart_fifo.buf[bc_uart_fifo.header].len;
-  memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
-  bc_uart_fifo.header++;
-  if (bc_uart_fifo.header >= UART_FIFO_LEN)
-    bc_uart_fifo.header = 0;
+    if (bc_uart_fifo.header == bc_uart_fifo.tail)
+      return 0;
 
-  bc_uart_dma_len = BUF_LEN;
-  HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.header].dat, BUF_LEN); //重新打开DMA接收
-  return len;
-}
-/* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#ifdef _COMM_DEEP
+    printf("|1");
+#endif
+    HAL_UART_DMAStop(&huart3);
+    __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+
+    memcpy(rcv, bc_uart_fifo.buf[bc_uart_fifo.header].dat, bc_uart_fifo.buf[bc_uart_fifo.header].len);
+    len = bc_uart_fifo.buf[bc_uart_fifo.header].len;
+    memset(&bc_uart_fifo.buf[bc_uart_fifo.header], 0x00, sizeof(stu_uartDat));
+    bc_uart_fifo.header++;
+    if (bc_uart_fifo.header >= UART_FIFO_LEN)
+      bc_uart_fifo.header = 0;
+
+    bc_uart_dma_len = BUF_LEN;
+    HAL_UART_Receive_DMA(&huart3, bc_uart_fifo.buf[bc_uart_fifo.header].dat, BUF_LEN); //重新打开DMA接收
+    return len;
+  }
+  
+
+  /* USER CODE END 1 */
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
