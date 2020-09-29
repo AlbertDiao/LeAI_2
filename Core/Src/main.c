@@ -56,8 +56,6 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
-DMA_HandleTypeDef hdma_usart2_rx;
-DMA_HandleTypeDef hdma_usart2_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
@@ -67,10 +65,10 @@ uart1:dbg, 115200
 uart2:bms, 4800
 uart3:bc, 115200
 */
-#define UPLOAD_RETRY_MAX 10 //Êı¾İÉÏ´«×î´óÖØÊÔ´ÎÊı
+#define UPLOAD_RETRY_MAX 10 //æ•°æ®ä¸Šä¼ æœ?å¤§é‡è¯•æ¬¡æ•?
 bool bms_data_new;
 char msg[MSG_LEN];
-uint8_t upload_retry; //Êı¾İÉÏ´«ÖØÊÔ´ÎÊı
+uint8_t upload_retry; //æ•°æ®ä¸Šä¼ é‡è¯•æ¬¡æ•°
 
 //uint8_t bms_read.step;
 //uint8_t bms_upload.step;
@@ -158,13 +156,13 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   /*
-  ´®¿ÚÊ¹ÓÃËµÃ÷
+  ä¸²å£ä½¿ç”¨è¯´æ˜
   USART1: Debug
   USART2: 485,BMS
   USART3: NB,BC20
   */
-  dcdc_open();                //¿ªÆôDCDCµçÔ´
-  __HAL_DBGMCU_FREEZE_IWDG(); //µ÷ÊÔÊ±¹Ø±Õ¿´ÃÅ¹·
+  dcdc_open();                //å¼?å¯DCDCç”µæº
+  __HAL_DBGMCU_FREEZE_IWDG(); //è°ƒè¯•æ—¶å…³é—­çœ‹é—¨ç‹—
 
   dbg_uart_recv = bms_uart_recv = bc_uart_recv = false;
   dbg_uart_recv_len = bms_uart_recv_len = bc_uart_recv_len = 0;
@@ -179,7 +177,7 @@ int main(void)
 #if defined(DBGMCU_APB1_FZ_DBG_IWDG_STOP)
   printf("DBGMCU_APB1_FZ_DBG_IWDG_STOP defined.\r\n");
 #endif
-  //¿´ÃÅ¹·Ê±¼äTout = 4*4096/40000 = 0.4096S
+  //çœ‹é—¨ç‹—æ—¶é—´Tout = 4*4096/40000 = 0.4096S
   led_close(0);
   led_close(1);
   led_close(2);
@@ -188,13 +186,16 @@ int main(void)
   led_close(5);
 
   led_open(LED_SYS);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-  if (!sys_init())
-  {
-    printf("ÏµÍ³³õÊ¼»¯Ê§°Ü£¡");
-    while (1)
-      ;
-  }
+  
+  //å¼€å¯485ç”µè·¯
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET); //TTL -> 485
+  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET); //485 -> TTL
+//  if (!sys_init())
+//  {
+//    printf("ç³»ç»Ÿåˆå§‹åŒ–å¤±è´¥ï¼");
+//    while (1)
+//      ;
+//  }
 
   if ((TASK_INITIALIZED != configTask(task_led, led_blink, TASK_1S)) || (TASK_STARTED != startTask(task_led, 1)))
   {
@@ -207,48 +208,48 @@ int main(void)
     return 1;
   }
 
-  if ((TASK_INITIALIZED != configTask(task_bms_upload, data_upload, TASK_100MS)) || (TASK_STARTED != startTask(task_bms_upload, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_bms_upload, data_upload, TASK_100MS)) || (TASK_STARTED != startTask(task_bms_upload, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
 
-  if ((TASK_INITIALIZED != configTask(task_upload_daemon, data_upload_daemon, TASK_1S)) || (TASK_STARTED != startTask(task_upload_daemon, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_upload_daemon, data_upload_daemon, TASK_1S)) || (TASK_STARTED != startTask(task_upload_daemon, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
 
-  if ((TASK_INITIALIZED != configTask(task_gnss_read, gnss_read_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_read, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_gnss_read, gnss_read_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_read, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
 
-  if ((TASK_INITIALIZED != configTask(task_gnss_upload, gnss_upload_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_upload, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_gnss_upload, gnss_upload_task, TASK_100MS)) || (TASK_STARTED != startTask(task_gnss_upload, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
 
-  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_100MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_100MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
 
-  if ((TASK_INITIALIZED != configTask(task_father, father_task, TASK_1S)) || (TASK_STARTED != startTask(task_father, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
-  printf("begin run\n");
+//  if ((TASK_INITIALIZED != configTask(task_father, father_task, TASK_1S)) || (TASK_STARTED != startTask(task_father, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
+//  printf("begin run\n");
 
-  if ((TASK_INITIALIZED != configTask(task_need_path, need_path_task, TASK_100MS * 5)) || (TASK_STARTED != startTask(task_need_path, 1)))
-  {
-    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
-    return 1;
-  }
+//  if ((TASK_INITIALIZED != configTask(task_need_path, need_path_task, TASK_100MS * 5)) || (TASK_STARTED != startTask(task_need_path, 1)))
+//  {
+//    printf("CREATE TASK ERROR(%u)!\n", __LINE__);
+//    return 1;
+//  }
   printf("begin run\n");
 
   /* USER CODE END 2 */
@@ -378,7 +379,6 @@ static void MX_USART2_UART_Init(void)
   }
   /* USER CODE BEGIN USART2_Init 2 */
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
-  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, BUF_LEN); //
 
   /* USER CODE END USART2_Init 2 */
 
@@ -467,7 +467,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -514,20 +514,20 @@ PUTCHAR_PROTOTYPE
 }
 
 /*
-¿ªÆôdcdc£º
-ÏÈ¿ªÆôVDD EN£¬Ê¹µÃDCDCµçÂ·¿ªÊ¼¹¤×÷
-µÈ´ı500ms£¨Èç¹ûÊ¾²¨Æ÷²âÊÔok¿ÉÒÔËõ¶ÌÕâ¸öÊ±¼ä£©
-ÔÙ¿ªÆôVCC SET£¬ÉèÖÃÎªÍ¨¹ıDCDC¹©µç
+å¼?å¯dcdcï¼?
+å…ˆå¼€å¯VDD ENï¼Œä½¿å¾—DCDCç”µè·¯å¼?å§‹å·¥ä½?
+ç­‰å¾…500msï¼ˆå¦‚æœç¤ºæ³¢å™¨æµ‹è¯•okå¯ä»¥ç¼©çŸ­è¿™ä¸ªæ—¶é—´ï¼?
+å†å¼€å¯VCC SETï¼Œè®¾ç½®ä¸ºé€šè¿‡DCDCä¾›ç”µ
 */
 void dcdc_open(void)
 {
-  //ÏÈ¿ªÆôVDD EN£¬Ê¹µÃDCDCµçÂ·¿ªÊ¼¹¤×÷
+  //å…ˆå¼€å¯VDD ENï¼Œä½¿å¾—DCDCç”µè·¯å¼?å§‹å·¥ä½?
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-  //µÈ´ı500ms£¨Èç¹ûÊ¾²¨Æ÷²âÊÔok¿ÉÒÔËõ¶ÌÕâ¸öÊ±¼ä£©
+  //ç­‰å¾…500msï¼ˆå¦‚æœç¤ºæ³¢å™¨æµ‹è¯•okå¯ä»¥ç¼©çŸ­è¿™ä¸ªæ—¶é—´ï¼?
   osDelay(500);
 
-  //ÔÙ¿ªÆôVCC SET£¬ÉèÖÃÎªÍ¨¹ıDCDC¹©µç
+  //å†å¼€å¯VCC SETï¼Œè®¾ç½®ä¸ºé€šè¿‡DCDCä¾›ç”µ
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 }
 
@@ -586,7 +586,7 @@ void data_read()
   switch (bms_read.step)
   {
   case 0x00:
-    //·ÀÖ¹³öÏÖbms_data_new»¹Ã»ÓĞ±»false£¬µ«ÊÇdata_uploadÈÎÎñÒÑ¾­±»¸ÉµôµÄÇé¿öµ¼ÖÂËøËÀ
+    //é˜²æ­¢å‡ºç°bms_data_newè¿˜æ²¡æœ‰è¢«falseï¼Œä½†æ˜¯data_uploadä»»åŠ¡å·²ç»è¢«å¹²æ‰çš„æƒ…å†µå¯¼è‡´é”æ­»
     if (bms_read.to_stop)
     {
       bms_read.step = 0xFF;
@@ -702,7 +702,7 @@ void data_upload()
         if (!bc_lock())
         {
           printf("\r\ndata upload\r\n");
-          set_bc_lock(true); //BMS upload¿ªÊ¼
+          set_bc_lock(true); //BMS uploadå¼?å§?
           printf("set_bc_lock(true) in %u\r\n", __LINE__);
           index = 6;
           bms_upload.step++;
@@ -749,7 +749,7 @@ void data_upload()
     }
     else
     {
-      //µÈ´ıÏûÏ¢Ê§°Ü
+      //ç­‰å¾…æ¶ˆæ¯å¤±è´¥
       bms_upload.step = BMS_UPLOAD_OVER;
       upload_retry++;
     }
@@ -928,7 +928,7 @@ void data_upload()
     break;
   case 0x0B:
     sprintf(msg, "pack_res,%u,%d,%u,%u",
-            pack_v, pack_i, soc, 45); //fccÏÈ´«¹Ì¶¨Öµ,Albert , 200717
+            pack_v, pack_i, soc, 45); //fccå…ˆä¼ å›ºå®šå€?,Albert , 200717
     sprintf(atstr, "AT+MIPLNOTIFY=0,%s,%u,0,%u,1,%d,\"%s\",%u,0\r\n", objtnum, BAT_OBJ, PACK_RES, strlen(msg), msg, index);
     printf("atstr(%u)=%s\r\n:", strlen(atstr), atstr);
     nb_cmd_async(atstr);
@@ -970,7 +970,7 @@ void data_upload()
     break;
   case 0x0D:
     sprintf(msg, "pack_status,%u,%u,%u,%u",
-            bat_status.warn.byte, bat_status.protect.byte, bat_status.sys.byte, bat_status.sys2.byte); //ÏµÍ³×´Ì¬ÉÏ´«
+            bat_status.warn.byte, bat_status.protect.byte, bat_status.sys.byte, bat_status.sys2.byte); //ç³»ç»ŸçŠ¶æ?ä¸Šä¼?
     sprintf(atstr, "AT+MIPLNOTIFY=0,%s,%u,0,%u,1,%d,\"%s\",%u,0\r\n", objtnum, BAT_OBJ, PACK_STATUS, strlen(msg), msg, index);
     printf("atstr(%u)=%s\r\n:", strlen(atstr), atstr);
     nb_cmd_async(atstr);
@@ -989,7 +989,7 @@ void data_upload()
         if (strstr(nb_recv, "OK"))
         {
           bms_upload.step = BMS_UPLOAD_OVER;
-          upload_retry = 0; //È«²¿ÉÏ´«³É¹¦
+          upload_retry = 0; //å…¨éƒ¨ä¸Šä¼ æˆåŠŸ
         }
         //}
       }
@@ -1003,8 +1003,8 @@ void data_upload()
 
   case BMS_UPLOAD_OVER:
     printf("set_bc_lock(false) in %u\r\n", __LINE__);
-    set_bc_lock(false);   //data upload½áÊø, ÊÍ·Åbc×ÊÔ´
-    tm_set(TM_BMS, 1000); //ÔİÍ£bms uploadÒ»¶ÎÊ±¼ä
+    set_bc_lock(false);   //data uploadç»“æŸ, é‡Šæ”¾bcèµ„æº
+    tm_set(TM_BMS, 1000); //æš‚åœbms uploadä¸?æ®µæ—¶é—?
     bms_data_new = false;
     led_close(LED_NB);
     bms_upload.step++;
@@ -1030,8 +1030,8 @@ void data_upload()
   }
 }
 
-//Êı¾İÉÏ´«ÊØ»¤½ø³Ì,1SÔËĞĞ1´Î
-//Èç¹ûÁ¬Ğø30·ÖÖÓstepÃÇ¶¼Ã»ÓĞ±ä»¯£¬ÄÇÃ´¾ÍÖØÆô
+//æ•°æ®ä¸Šä¼ å®ˆæŠ¤è¿›ç¨‹,1Sè¿è¡Œ1æ¬?
+//å¦‚æœè¿ç»­30åˆ†é’Ÿstepä»¬éƒ½æ²¡æœ‰å˜åŒ–ï¼Œé‚£ä¹ˆå°±é‡å¯
 void data_upload_daemon()
 {
   if ((daemon.l_bms_upload != bms_upload.step) ||
@@ -1039,7 +1039,7 @@ void data_upload_daemon()
       (daemon.l_gnss_upload != gnss_upload.step) ||
       (daemon.l_track != track.step))
   {
-    //ÓĞ±ä»¯
+    //æœ‰å˜åŒ?
     daemon.time = 0;
     daemon.l_bms_upload = bms_upload.step;
     daemon.l_gnss_read = gnss_read.step;
@@ -1054,22 +1054,22 @@ void data_upload_daemon()
   if (daemon.time > 60 * 30)
   {
     printf("\r\n\r\n.restart of step\r\n\r\n");
-    NVIC_SystemReset(); //ÖØÆôÏµÍ³
+    NVIC_SystemReset(); //é‡å¯ç³»ç»Ÿ
   }
 
   if (upload_retry >= UPLOAD_RETRY_MAX)
   {
     printf("\r\n\r\n.restart of upload\r\n\r\n");
-    NVIC_SystemReset(); //ÖØÆôÏµÍ³
+    NVIC_SystemReset(); //é‡å¯ç³»ç»Ÿ
   }
 }
 
-//ÃüÁîÖ´ĞĞ½ø³Ì
+//å‘½ä»¤æ‰§è¡Œè¿›ç¨‹
 void nb_cmd_exe()
 {
 #define EX_MSG_LEN 10
-  char ex_msg[MSG_LEN]; //´æ·ÅNBÃüÁîÏÂ·¢µÄbody.argµÄÄÚÈİ
-  char pri_atstr[50];   //´æ·ÅNBÃüÁîÏÂ·¢µÄbody.argµÄÄÚÈİ
+  char ex_msg[MSG_LEN]; //å­˜æ”¾NBå‘½ä»¤ä¸‹å‘çš„body.argçš„å†…å®?
+  char pri_atstr[50];   //å­˜æ”¾NBå‘½ä»¤ä¸‹å‘çš„body.argçš„å†…å®?
   char *sx;
   int offset;
 
@@ -1082,7 +1082,7 @@ void nb_cmd_exe()
     printf("\r\nstr:%s\r\n", sx);
     printf("\r\nnb_recv:%s\r\n", nb_ctrl.dat);
 
-    //»ñµÃÃüÁîÏÂ·¢µÄÄÚÈİ
+    //è·å¾—å‘½ä»¤ä¸‹å‘çš„å†…å®?
     sscanf(sx, "+MIPLEXECUTE: %u,%u",
            &msg_res, &msg_id);
     sx = strstr(nb_ctrl.dat, "\"");
@@ -1101,7 +1101,7 @@ void nb_cmd_exe()
     printf("msg_res = %u\r\n", msg_res);
     printf("msg_id = %u\r\n", msg_id);
     printf("EXE: msg={%s}\r\n", ex_msg);
-    //½âÎömsgµÄÖµ,a:¿ªÆô£¬ b£º¹Ø±Õ
+    //è§£æmsgçš„å??,a:å¼?å¯ï¼Œ bï¼šå…³é—?
     if (ex_msg[0] == 'a')
     {
       //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
@@ -1116,16 +1116,16 @@ void nb_cmd_exe()
     }
     nb_ctrl.has_dat = false;
     memset(nb_ctrl.dat, 0x00, NB_BUF_LEN);
-    //·µ»ØÃüÁî°ü, µ÷ÓÃ³É¹¦£¬µÚÈı¸ö²ÎÊı·µ»Ø2
+    //è¿”å›å‘½ä»¤åŒ?, è°ƒç”¨æˆåŠŸï¼Œç¬¬ä¸‰ä¸ªå‚æ•°è¿”å›2
     //+MIPLEXECUTERSP: <ref>,<msgId>,<result> (2)
     sprintf(pri_atstr, "AT+MIPLEXECUTERSP=%u,%u,2\r\n", msg_res, msg_id);
     nb_cmd_async(pri_atstr);
   }
 }
 
-/*Ê²Ã´Ê±ºòĞèÒª²É¼¯¹ì¼££¿
- Ã¿´ÎÓĞ·ÅµçµçÁ÷³ÖĞø20ÃëÖÓºó²É¼¯Ò»´Î
- ²É¼¯ÍêÒÔºó£¬³ı·ÇÁ¬Ğø20ÃëÃ»ÓĞ·ÅµçµçÁ÷£¬·ñÔò²»»á¼ÌĞø¼ÆËãÊÇ·ñĞèÒª²É¼¯
+/*ä»?ä¹ˆæ—¶å€™éœ€è¦é‡‡é›†è½¨è¿¹ï¼Ÿ
+ æ¯æ¬¡æœ‰æ”¾ç”µç”µæµæŒç»?20ç§’é’Ÿåé‡‡é›†ä¸€æ¬?
+ é‡‡é›†å®Œä»¥åï¼Œé™¤éè¿ç»­20ç§’æ²¡æœ‰æ”¾ç”µç”µæµï¼Œå¦åˆ™ä¸ä¼šç»§ç»­è®¡ç®—æ˜¯å¦éœ?è¦é‡‡é›?
 */
 void need_path_task()
 {
@@ -1137,8 +1137,8 @@ void need_path_task()
 
   case 0x01:
     bms_get_i();
-//ÀÛ¼ÆµçÁ÷³ÖĞøÊ±¼ä
-//·ÅµçµçÁ÷´óÓÚ1A,pack_iÔÚbmsÈÎÎñÖĞ±»³ÖĞø¸üĞÂ
+//ç´¯è®¡ç”µæµæŒç»­æ—¶é—´
+//æ”¾ç”µç”µæµå¤§äº1A,pack_iåœ¨bmsä»»åŠ¡ä¸­è¢«æŒç»­æ›´æ–°
 #define CUR_RUN_THE -500
     if (pack_i < CUR_RUN_THE)
     {
@@ -1151,7 +1151,7 @@ void need_path_task()
 
     if (need_path.times + need_path.uc_times > 60)
     {
-      //¿ªÊ¼²É¼¯¹ì¼£µÄÌõ¼ş£¬ÎŞµçÁ÷µãÊıÕ¼±È²»³¬¹ı70%
+      //å¼?å§‹é‡‡é›†è½¨è¿¹çš„æ¡ä»¶ï¼Œæ— ç”µæµç‚¹æ•°å æ¯”ä¸è¶…è¿?70%
       if ((need_path.uc_times < 42))
       {
         need_path.need = true;
@@ -1160,7 +1160,7 @@ void need_path_task()
       }
       else
       {
-        //Õâ¶ÎÊ±¼äµÄÎŞĞ§µãÌ«¶à£¬ÖØÖÃ¼ÆÊıÆ÷
+        //è¿™æ®µæ—¶é—´çš„æ— æ•ˆç‚¹å¤ªå¤šï¼Œé‡ç½®è®¡æ•°å™¨
         need_path.times = 0;
         need_path.uc_times = 0;
       }
@@ -1171,7 +1171,7 @@ void need_path_task()
   case 0x02:
     if (!need_path.need)
     {
-      led_close(LED_PATH); //Êı¾İÉÏ´«ÍêÒÔºó¹ØµôÖ¸Ê¾µÆ
+      led_close(LED_PATH); //æ•°æ®ä¸Šä¼ å®Œä»¥åå…³æ‰æŒ‡ç¤ºç¯
       need_path.step = 0x03;
       need_path.times = 0;
       need_path.uc_times = 0;
@@ -1180,21 +1180,21 @@ void need_path_task()
 
   case 0x03:
     bms_get_i();
-    //ÀÛ¼ÆµçÁ÷³ÖĞøÊ±¼ä
-    //·ÅµçµçÁ÷Ğ¡ÓÚ1A, »òÕßÕıÔÚ³äµç£¬±»ÈÏÎªÊÇ²»´¦ÓÚÔËĞĞ×´Ì¬
+    //ç´¯è®¡ç”µæµæŒç»­æ—¶é—´
+    //æ”¾ç”µç”µæµå°äº1A, æˆ–è?…æ­£åœ¨å……ç”µï¼Œè¢«è®¤ä¸ºæ˜¯ä¸å¤„äºè¿è¡ŒçŠ¶æ€?
     if (pack_i >= CUR_RUN_THE)
     {
       need_path.uc_times++;
     }
     else
     {
-      led_open(LED_PATH); //ÖĞÍ¾Èç¹ûÖØĞÂ¼ÆÊı£¬ÄÇÃ´ÖØĞÂ´ò¿ªµÆ
+      led_open(LED_PATH); //ä¸­é?”å¦‚æœé‡æ–°è®¡æ•°ï¼Œé‚£ä¹ˆé‡æ–°æ‰“å¼€ç?
       need_path.uc_times = 0;
     }
-    //³ÖĞøÈô¸É´ÎÃ»ÓĞ·ÅµçµçÁ÷£¬ÔòÈÏÎªÍ£Ö¹Ê±¼ä×ã¹»
+    //æŒç»­è‹¥å¹²æ¬¡æ²¡æœ‰æ”¾ç”µç”µæµï¼Œåˆ™è®¤ä¸ºåœæ­¢æ—¶é—´è¶³å¤?
     if (need_path.uc_times > 30)
     {
-      led_close(LED_PATH); //µ±¿ÕÏĞÊ±¼ä´ï±êÒÔºó£¬¹ØµôÖ¸Ê¾µÆ£¬ÌáÊ¾¿ÉÒÔÉÏµçÁ÷ÁË
+      led_close(LED_PATH); //å½“ç©ºé—²æ—¶é—´è¾¾æ ‡ä»¥åï¼Œå…³æ‰æŒ‡ç¤ºç¯ï¼Œæç¤ºå¯ä»¥ä¸Šç”µæµäº†
       need_path.times = 0;
       need_path.uc_times = 0;
       need_path.step = 0x01;
@@ -1207,13 +1207,13 @@ void need_path_task()
 }
 
 /*
-¸ß¼¶²ßÂÔ£¨father task£©
-ÅĞ¶ÏÊÇ·ñĞèÒª²É¼¯¹ì¼££¬Èç¹ûĞèÒª²É¼¯¹ì¼££¬Ôò£º
-Í¨ÖªBMS²É¼¯ºÍÉÏ´«£¬gnss²É¼¯ºÍÉÏ´«µÄÈÎÎñÍ£µô
-µÈ´ıÉÏÊöÈÎÎñ¶¼Í£µô
-É±µôÉÏÊöÈÎÎñ
-¿ªÊ¼¹ì¼£²É¼¯ÈÎÎñ
-¹ì¼£²É¼¯ÈÎÎñÍê³Éºó£¬ÖØÆôÉÏÊöÈÎÎñ
+é«˜çº§ç­–ç•¥ï¼ˆfather taskï¼?
+åˆ¤æ–­æ˜¯å¦éœ?è¦é‡‡é›†è½¨è¿¹ï¼Œå¦‚æœéœ?è¦é‡‡é›†è½¨è¿¹ï¼Œåˆ™ï¼š
+é€šçŸ¥BMSé‡‡é›†å’Œä¸Šä¼ ï¼Œgnssé‡‡é›†å’Œä¸Šä¼ çš„ä»»åŠ¡åœæ‰
+ç­‰å¾…ä¸Šè¿°ä»»åŠ¡éƒ½åœæ?
+æ?æ‰ä¸Šè¿°ä»»åŠ?
+å¼?å§‹è½¨è¿¹é‡‡é›†ä»»åŠ?
+è½¨è¿¹é‡‡é›†ä»»åŠ¡å®Œæˆåï¼Œé‡å¯ä¸Šè¿°ä»»åŠ¡
 */
 void father_task()
 {
@@ -1226,13 +1226,13 @@ void father_task()
     }
     break;
 
-  //Í¨ÖªÈÎÎñÍ£Ö¹
+  //é€šçŸ¥ä»»åŠ¡åœæ­¢
   case 1:
     bms_read.to_stop = true;
     bms_upload.to_stop = true;
     gnss_read.to_stop = true;
     gnss_upload.to_stop = true;
-    //tm_set(TM_FATHER,30000);//µÈ´ı30ÃëÖÓ
+    //tm_set(TM_FATHER,30000);//ç­‰å¾…30ç§’é’Ÿ
     father.step++;
     break;
 
@@ -1265,7 +1265,7 @@ void father_task()
   case 0x05:
     if (track.run_over)
     {
-      //Íâ²¿ÖÃÎ»need_path£¬ÖØĞÂ¼ì²â³µÁ¾³ÖĞøÔËĞĞ
+      //å¤–éƒ¨ç½®ä½need_pathï¼Œé‡æ–°æ£€æµ‹è½¦è¾†æŒç»­è¿è¡?
       need_path.need = false;
       killTask(task_track);
       printf("tasks reset\r\n");

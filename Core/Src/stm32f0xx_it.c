@@ -72,8 +72,6 @@ uint32_t dbg_uart_dma_len, bc_uart_dma_len, bms_uart_dma_len;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern UART_HandleTypeDef huart1;
@@ -185,8 +183,6 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
   HAL_DMA_IRQHandler(&hdma_usart3_rx);
   HAL_DMA_IRQHandler(&hdma_usart3_tx);
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
@@ -222,17 +218,17 @@ void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
   uint32_t tmp_flag = 0;
-
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE END USART2_IRQn 0 */
-  /* USER CODE BEGIN USART2_IRQn 1 */
   tmp_flag = __HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE);
-  if (tmp_flag != RESET)
+  if ((tmp_flag != RESET))
   {
-    HAL_UART_DMAStop(&huart2);
     __HAL_UART_CLEAR_IDLEFLAG(&huart2);
-    HAL_UART_Receive_DMA(&huart2, bms_uart_buf, BUF_LEN); //重新打开DMA接收
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+
   }
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
   /* USER CODE END USART2_IRQn 1 */
 }
 
@@ -248,7 +244,7 @@ void USART3_4_IRQHandler(void)
   /* USER CODE END USART3_4_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_4_IRQn 1 */
-      //尾部维护和数据接收
+      //尾部维护和数据接�?
 
   if (USART3 == huart3.Instance)
   {
@@ -258,7 +254,7 @@ void USART3_4_IRQHandler(void)
       HAL_UART_DMAStop(&huart3);
       __HAL_UART_CLEAR_IDLEFLAG(&huart3);
         //判断fifo是否已经满了
-      //将数据保存
+      //将数据保�?
       str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
       temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx); 
       if (temp == 0)
@@ -277,7 +273,7 @@ void USART3_4_IRQHandler(void)
       //      }
       //      else
       {
-        //如果队列已经满了，直接忽略
+        //如果队列已经满了，直接忽�?
         if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))
         {
         }
@@ -299,15 +295,14 @@ void USART3_4_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 void bms_uart_clear()
 {
-  //uart2_buf[0] = '\0';
-  HAL_UART_DMAStop(&huart2); //
-  __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+//  HAL_UART_DMAStop(&huart2); 
+//  __HAL_UART_CLEAR_IDLEFLAG(&huart2);
 
   memset(bms_uart_buf, 0x00, BUF_LEN);
   bms_uart_recv_len = 0;
   bms_uart_recv = false;
   bms_uart_dma_len = BUF_LEN;
-  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, bms_uart_dma_len); //重新打开DMA接收
+//  HAL_UART_Receive_DMA(&huart2, bms_uart_buf, bms_uart_dma_len); //重新打开DMA接收
 
   /*
     HAL_UART_DMAStop(&huart3);//
