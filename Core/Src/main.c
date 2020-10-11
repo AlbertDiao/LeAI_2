@@ -67,7 +67,7 @@ uart1:dbg, 115200
 uart2:bms, 4800
 uart3:bc, 115200
 */
-#define UPLOAD_RETRY_MAX 10 //数据上传�?大重试�?��??
+#define UPLOAD_RETRY_MAX 10 //数据上传最大重试次数
 bool bms_data_new;
 char msg[MSG_LEN];
 uint8_t upload_retry; //数据上传重试次数
@@ -163,8 +163,8 @@ int main(void)
   USART2: 485,BMS
   USART3: NB,BC20
   */
-  dcdc_open();                //�?启DCDC电源
-  __HAL_DBGMCU_FREEZE_IWDG(); //调试时关�?看门�?
+  dcdc_open();                //�?启DCDC电源
+  __HAL_DBGMCU_FREEZE_IWDG(); //调试时关�?看门�?
 
   dbg_uart_recv = bms_uart_recv = bc_uart_recv = false;
   dbg_uart_recv_len = bms_uart_recv_len = bc_uart_recv_len = 0;
@@ -197,7 +197,7 @@ int main(void)
 //  }
   if (!sys_init())
   {
-    printf("系统初�?�化失败�?");
+    printf("系统初�?�化失败�?");
     while (1)
       ;
   }
@@ -237,7 +237,7 @@ int main(void)
     return 1;
   }
 
-  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_100MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
+  if ((TASK_INITIALIZED != configTask(task_nb_cmd, nb_cmd_exe, TASK_10MS)) || (TASK_STARTED != startTask(task_nb_cmd, 1)))
   {
     printf("CREATE TASK ERROR(%u)!\n", __LINE__);
     return 1;
@@ -519,20 +519,20 @@ PUTCHAR_PROTOTYPE
 }
 
 /*
-�?启dcdc�?
-先开启VDD EN，使得DCDC电路�?始工�?
-等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
-再开启VCC SET，�?�置为�?�过DCDC供电
+�?启dcdc�?
+先开启VDD EN，使得DCDC电路�?始工�?
+等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
+再开启VCC SET，�?�置为�?�过DCDC供电
 */
 void dcdc_open(void)
 {
-  //先开启VDD EN，使得DCDC电路�?始工�?
+  //先开启VDD EN，使得DCDC电路�?始工�?
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-  //等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
+  //等待500ms（�?�果示波器测试ok�?以缩�?这个时间�?
   osDelay(500);
 
-  //再开启VCC SET，�?�置为�?�过DCDC供电
+  //再开启VCC SET，�?�置为�?�过DCDC供电
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 }
 
@@ -588,7 +588,7 @@ void data_read()
   switch (bms_read.step)
   {
   case 0x00:
-    //防�?�出现bms_data_new还没有�?�false，但是data_upload任务已经�?干掉的情况�?�致锁�??
+    //防�?�出现bms_data_new还没有�?�false，但是data_upload任务已经�?干掉的情况�?�致锁�??
     if (bms_read.to_stop)
     {
       bms_read.step = 0xFF;
@@ -704,7 +704,7 @@ void data_upload()
         if (!bc_lock())
         {
           printf("\r\ndata upload\r\n");
-          set_bc_lock(true); //BMS upload�?�?
+          set_bc_lock(true); //BMS upload�?�?
           printf("set_bc_lock(true) in %u\r\n", __LINE__);
           index = 6;
           bms_upload.step++;
@@ -930,7 +930,7 @@ void data_upload()
     break;
   case 0x0B:
     sprintf(msg, "pack_res,%u,%d,%u,%u",
-            pack_v, pack_i, soc, 45); //fcc先传固定�?,Albert , 200717
+            pack_v, pack_i, soc, 45); //fcc先传固定�?,Albert , 200717
     sprintf(atstr, "AT+MIPLNOTIFY=0,%s,%u,0,%u,1,%d,\"%s\",%u,0\r\n", objtnum, BAT_OBJ, PACK_RES, strlen(msg), msg, index);
     printf("atstr(%u)=%s\r\n:", strlen(atstr), atstr);
     nb_cmd_async(atstr);
@@ -972,7 +972,7 @@ void data_upload()
     break;
   case 0x0D:
     sprintf(msg, "pack_status,%u,%u,%u,%u",
-            bat_status.warn.byte, bat_status.protect.byte, bat_status.sys.byte, bat_status.sys2.byte); //系统状�?�上�?
+            bat_status.warn.byte, bat_status.protect.byte, bat_status.sys.byte, bat_status.sys2.byte); //系统状�?�上�?
     sprintf(atstr, "AT+MIPLNOTIFY=0,%s,%u,0,%u,1,%d,\"%s\",%u,0\r\n", objtnum, BAT_OBJ, PACK_STATUS, strlen(msg), msg, index);
     printf("atstr(%u)=%s\r\n:", strlen(atstr), atstr);
     nb_cmd_async(atstr);
@@ -1006,7 +1006,7 @@ void data_upload()
   case BMS_UPLOAD_OVER:
     printf("set_bc_lock(false) in %u\r\n", __LINE__);
     set_bc_lock(false);   //data upload结束, 释放bc资源
-    tm_set(TM_BMS, 1000); //暂停bms upload�?段时�?
+    tm_set(TM_BMS, 1000); //暂停bms upload�?段时�?
     bms_data_new = false;
     led_close(LED_NB);
     bms_upload.step++;
@@ -1032,8 +1032,8 @@ void data_upload()
   }
 }
 
-//数据上传守护进程,1S运�??1�?
-//如果连续30分钟step�?都没有变化，那么就重�?
+//数据上传守护进程,1S运�??1�?
+//如果连续30分钟step�?都没有变化，那么就重�?
 void data_upload_daemon()
 {
   if ((daemon.l_bms_upload != bms_upload.step) ||
@@ -1041,7 +1041,7 @@ void data_upload_daemon()
       (daemon.l_gnss_upload != gnss_upload.step) ||
       (daemon.l_track != track.step))
   {
-    //有变�?
+    //有变�?
     daemon.time = 0;
     daemon.l_bms_upload = bms_upload.step;
     daemon.l_gnss_read = gnss_read.step;
@@ -1066,68 +1066,110 @@ void data_upload_daemon()
   }
 }
 
-//命令执�?�进�?
+
+//命令执行进程
 void nb_cmd_exe()
 {
-#define EX_MSG_LEN 10
-  char ex_msg[MSG_LEN]; //存放NB命令下发的body.arg的内�?
-  char pri_atstr[50];   //存放NB命令下发的body.arg的内�?
   char *sx;
   int offset;
 
-  uint32_t msg_res;
-  uint32_t msg_id;
-
-  if (nb_ctrl.has_dat)
+  if(nb_ctrl.step != 0x00)
+    printf("nb_ctrl step=%u\r\n", nb_ctrl.step);
+  switch (nb_ctrl.step)
   {
+  case 0x00:
+    //检查是否有数据
+    if (nb_ctrl.has_dat)
+    {
+      nb_ctrl.step++;
+    }
+
+    break;
+
+  case 0x01:
     sx = strstr(nb_ctrl.dat, "+MIPLEXECUTE:");
     printf("\r\nstr:%s\r\n", sx);
     printf("\r\nnb_recv:%s\r\n", nb_ctrl.dat);
 
-    //获得命令下发的内�?
+    //获得命令下发的内容
     sscanf(sx, "+MIPLEXECUTE: %u,%u",
-           &msg_res, &msg_id);
+           &nb_ctrl.msg_res, &nb_ctrl.msg_id);
     sx = strstr(nb_ctrl.dat, "\"");
     if (sx == NULL)
     {
+      //数据内容不对，回到初始状态，注意这里不能解锁bc，因为还没有上锁，如果解锁了，可能是把其他任务的锁解锁了
       nb_ctrl.has_dat = false;
       memset(nb_ctrl.dat, 0x00, NB_BUF_LEN);
-      return;
+      nb_ctrl.step = 0x00;
     }
-    offset = 0;
-    while (*(++sx) != '\"')
+    else
     {
-      ex_msg[offset++] = *sx;
+      offset = 0;
+      while (*(++sx) != '\"')
+      {
+        nb_ctrl.ex_msg[offset++] = *sx;
+      }
+      nb_ctrl.ex_msg[offset] = 0x00;
+      printf("msg_res = %u\r\n", nb_ctrl.msg_res);
+      printf("msg_id = %u\r\n", nb_ctrl.msg_id);
+      printf("EXE: msg={%s}\r\n", nb_ctrl.ex_msg);
+      //解析msg的值,a:开启， b：关闭
+      if (nb_ctrl.ex_msg[0] == 'a')
+      {
+        led_open(LED_CTRL);
+      }
+      else if (nb_ctrl.ex_msg[0] == 'b')
+      {
+        led_close(LED_CTRL);
+      }
+      tm_set(TM_NB_CTRL, 4500);
+      nb_ctrl.step++;
     }
-    ex_msg[offset] = 0x00;
-    printf("msg_res = %u\r\n", msg_res);
-    printf("msg_id = %u\r\n", msg_id);
-    printf("EXE: msg={%s}\r\n", ex_msg);
-    //解析msg的�??,a:�?�?�? b：关�?
-    if (ex_msg[0] == 'a')
+    break;
+
+  case 0x02:
+    //等待bc资源并锁定
+    if (!bc_lock())
     {
-      //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
-      //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
-      led_open(LED_CTRL);
+      set_bc_lock(true);
+      nb_ctrl.step++;
     }
-    else if (ex_msg[0] == 'b')
+    else if (tm_out(TM_NB_CTRL))
     {
-      //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
-      //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_SET);
-      led_close(LED_CTRL);
+      //超时退出处理，回到初始状态，注意这里不能解锁bc，因为还没有上锁，如果解锁了，可能是把其他任务的锁解锁了
+      nb_ctrl.has_dat = false;
+      memset(nb_ctrl.dat, 0x00, NB_BUF_LEN);
+      nb_ctrl.step = 0x00;
     }
+    break;
+
+  case 0x03:
+    //返回命令包, 调用成功，第三个参数返回2
+    //+MIPLEXECUTERSP: <ref>,<msgId>,<result> (2)
+    sprintf(nb_ctrl.pri_atstr, "AT+MIPLEXECUTERSP=%u,%u,2\r\n", nb_ctrl.msg_res, nb_ctrl.msg_id);
+  printf("send: nb_ctrl.pri_atstr: %s\r\n", nb_ctrl.pri_atstr);
+    nb_cmd_async(nb_ctrl.pri_atstr);
+  printf("send over.\r\n");
+    nb_ctrl.step++;
+    break;
+
+  case 0x04:
+    //注意要解锁bc资源
     nb_ctrl.has_dat = false;
     memset(nb_ctrl.dat, 0x00, NB_BUF_LEN);
-    //返回命令�?, 调用成功，�??三个参数返回2
-    //+MIPLEXECUTERSP: <ref>,<msgId>,<result> (2)
-    sprintf(pri_atstr, "AT+MIPLEXECUTERSP=%u,%u,2\r\n", msg_res, msg_id);
-    nb_cmd_async(pri_atstr);
+    set_bc_lock(false);
+    nb_ctrl.step = 0x00;
+    break;
+
+  default:
+    nb_ctrl.step = 0x00;
+    break;
   }
 }
 
-/*�?么时候需要采集轨迹？
- 每�?�有放电电流持�??20秒钟后采集一�?
- 采集完以后，除非连续20秒没有放电电流，否则不会继续计算�?否�??要采�?
+/*�?么时候需要采集轨迹？
+ 每�?�有放电电流持�??20秒钟后采集一�?
+ 采集完以后，除非连续20秒没有放电电流，否则不会继续计算�?否�??要采�?
 */
 void need_path_task()
 {
@@ -1139,8 +1181,8 @@ void need_path_task()
 
   case 0x01:
     bms_get_i();
-//�?计电流持�?时间
-//放电电流大于1A,pack_i在bms任务�?�?持续更新
+//�?计电流持�?时间
+//放电电流大于1A,pack_i在bms任务�?�?持续更新
 #define CUR_RUN_THE -500
     if (pack_i < CUR_RUN_THE)
     {
@@ -1153,7 +1195,7 @@ void need_path_task()
 
     if (need_path.times + need_path.uc_times > 60)
     {
-      //�?始采集轨迹的条件，无电流点数占比不超�?70%
+      //�?始采集轨迹的条件，无电流点数占比不超�?70%
       if ((need_path.uc_times < 42))
       {
         need_path.need = true;
@@ -1162,7 +1204,7 @@ void need_path_task()
       }
       else
       {
-        //这�?�时间的无效点太多，重置计数�?
+        //这�?�时间的无效点太多，重置计数�?
         need_path.times = 0;
         need_path.uc_times = 0;
       }
@@ -1182,21 +1224,21 @@ void need_path_task()
 
   case 0x03:
     bms_get_i();
-    //�?计电流持�?时间
-    //放电电流小于1A, 或�?��?�在充电，�??认为�?不�?�于运�?�状�?
+    //�?计电流持�?时间
+    //放电电流小于1A, 或�?��?�在充电，�??认为�?不�?�于运�?�状�?
     if (pack_i >= CUR_RUN_THE)
     {
       need_path.uc_times++;
     }
     else
     {
-      led_open(LED_PATH); //�???��?�果重新计数，那么重新打�?�?
+      led_open(LED_PATH); //�???��?�果重新计数，那么重新打�?�?
       need_path.uc_times = 0;
     }
-    //持续若干次没有放电电流，则�?�为停�?�时间足�?
+    //持续若干次没有放电电流，则�?�为停�?�时间足�?
     if (need_path.uc_times > 30)
     {
-      led_close(LED_PATH); //当空闲时间达标以后，关掉指示�?，提示可以上电流�?
+      led_close(LED_PATH); //当空闲时间达标以后，关掉指示�?，提示可以上电流�?
       need_path.times = 0;
       need_path.uc_times = 0;
       need_path.step = 0x01;
@@ -1209,12 +1251,12 @@ void need_path_task()
 }
 
 /*
-高级策略（father task�?
-判断�?否�??要采集轨迹，如果�?要采集轨迹，则：
+高级策略（father task�?
+判断�?否�??要采集轨迹，如果�?要采集轨迹，则：
 通知BMS采集和上传，gnss采集和上传的任务停掉
-等待上述任务都停�?
-�?掉上述任�?
-�?始轨迹采集任�?
+等待上述任务都停�?
+�?掉上述任�?
+�?始轨迹采集任�?
 轨迹采集任务完成后，重启上述任务
 */
 void father_task()
@@ -1228,7 +1270,7 @@ void father_task()
     }
     break;
 
-  //通知任务停�??
+  //通知任务停�??
   case 1:
     bms_read.to_stop = true;
     bms_upload.to_stop = true;
@@ -1267,7 +1309,7 @@ void father_task()
   case 0x05:
     if (track.run_over)
     {
-      //外部�?位need_path，重新�??测车辆持�?运�??
+      //外部�?位need_path，重新�??测车辆持�?运�??
       need_path.need = false;
       killTask(task_track);
       printf("tasks reset\r\n");

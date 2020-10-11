@@ -268,23 +268,24 @@ void USART2_IRQHandler(void)
         __HAL_UART_CLEAR_IDLEFLAG(&huart3);
         //判断fifo是否已经满了
         //将数据保�?
-        str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
+        //str = strstr((char *)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "+MIPLEXECUTE:");
+        str = strstr((char*)bc_uart_fifo.buf[bc_uart_fifo.tail].dat, "CUTE:");
         temp = BUF_LEN - __HAL_DMA_GET_COUNTER(&hdma_usart3_rx);
         if (temp == 0)
           goto end_recv;
         //printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\r\n");
         //printf(bc_uart_fifo.buf[bc_uart_fifo.tail].dat);
         //首先判断是否是控制命令，如果是则存入控制命令处理的fifo
-        //      if (str != NULL)
-        //      {
-        //        if (nb_ctrl.has_dat == false)
-        //        {
-        //          memcpy(nb_ctrl.dat, str, temp);
-        //          nb_ctrl.dat[temp] = 0x00;
-        //          nb_ctrl.has_dat = true;
-        //        }
-        //      }
-        //      else
+        if (str != NULL)
+        {
+          if (nb_ctrl.has_dat == false)
+          {
+            memcpy(nb_ctrl.dat, str, temp);
+            nb_ctrl.dat[temp] = 0x00;
+            nb_ctrl.has_dat = true;
+          }
+        }
+        else
         {
           //如果队列已经满了，直接忽�?
           if ((bc_uart_fifo.tail + 1 == bc_uart_fifo.header) || (bc_uart_fifo.tail == UART_FIFO_LEN - 1) & (bc_uart_fifo.header == 0))

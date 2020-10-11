@@ -20,6 +20,7 @@
 #define TM_FATHER 4
 #define TM_PATH 5
 #define TM_PATH_2 6
+#define TM_NB_CTRL 7
 
 typedef struct
 {

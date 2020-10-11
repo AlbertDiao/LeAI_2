@@ -32,8 +32,14 @@
 #define NUM_LEN 50
 #define RES_LEN BUF_LEN
 
+#define EX_MSG_LEN 100
 typedef struct
 {
+  uint8_t step;
+  char ex_msg[EX_MSG_LEN]; //存放NB命令下发的body.arg的内容
+  char pri_atstr[EX_MSG_LEN];   //存放NB命令下发的body.arg的内容
+  uint32_t msg_res;
+  uint32_t msg_id;
   bool has_dat;
   char dat[NB_BUF_LEN];
 } stu_nb_ctrl;
